@@ -44,7 +44,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Roadmap Tool</title>
     <link rel="stylesheet" href="tailwind.min.css">
+<<<<<<< HEAD
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+=======
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+>>>>>>> 02d1416781cea117d588af57d6ed32f7f394953e
     <style>
         .pdf-content {
             font-family: Arial, sans-serif;
@@ -74,7 +79,11 @@
             <h2 class="text-lg font-semibold mb-2">How to Use This Tool</h2>
             <p class="text-sm">1. Add or remove products in the "Manage Products" section.<br>
                2. Fill out the client form, select products, and specify quantities.<br>
+<<<<<<< HEAD
                3. Click "Generate Roadmap" to create an AI-generated plan.<br>
+=======
+               3. Click "Generate Roadmap" to create a plan.<br>
+>>>>>>> 02d1416781cea117d588af57d6ed32f7f394953e
                4. Review and download the PDF to include with your proposal.</p>
         </div>
 
@@ -238,6 +247,79 @@
             return { isValid, selectedProducts };
         }
 
+<<<<<<< HEAD
+=======
+        // Simulate AI-driven plan generation
+        function generateImplementationPlan(data) {
+            const { itChallenges, businessGoals, currentInfra, products } = data;
+            const milestones = [];
+            const timelineMonths = 12;
+            const productsPerMilestone = Math.ceil(products.length / 3);
+
+            milestones.push({
+                name: "Assessment and Initial Setup",
+                timeframe: "Months 1-4",
+                deliverables: [
+                    "Comprehensive IT infrastructure assessment",
+                    `Initial deployment of ${products.slice(0, productsPerMilestone).map(p => `${p.product} (${p.quantity} units)`).join(" and ")}`,
+                    "Staff training on new systems"
+                ],
+                approach: `We will review your current infrastructure (${currentInfra}) to identify gaps. The selected products, scaled to your specified quantities, will address immediate challenges (${itChallenges}). Regular checkpoints will ensure alignment with your goals (${businessGoals}).`,
+                risks: [
+                    "Potential downtime during initial setup",
+                    `Resource constraints for large-scale deployments (e.g., ${products.find(p => p.quantity > 50)?.product || "high-quantity products"})`
+                ],
+                kpis: [
+                    "Complete assessment report within 6 weeks",
+                    "90% of initial systems deployed by month 4",
+                    "80% staff trained on new systems"
+                ]
+            });
+
+            milestones.push({
+                name: "Optimization and Integration",
+                timeframe: "Months 5-8",
+                deliverables: [
+                    `Integration of ${products.slice(productsPerMilestone, productsPerMilestone * 2).map(p => `${p.product} (${p.quantity} units)`).join(" and ")}`,
+                    "Performance tuning of deployed systems",
+                    "Mid-term review of business goal alignment"
+                ],
+                approach: `This phase optimizes deployed systems and integrates additional products, tailored to your quantities, to enhance performance. We will address emerging challenges and ensure the infrastructure supports your goals (${businessGoals}).`,
+                risks: [
+                    "Integration complexities with existing systems",
+                    "Scaling issues for high-quantity products"
+                ],
+                kpis: [
+                    "100% integration of planned products by month 8",
+                    "95% system uptime",
+                    "Positive mid-term review feedback"
+                ]
+            });
+
+            milestones.push({
+                name: "Full Deployment and Handover",
+                timeframe: "Months 9-12",
+                deliverables: [
+                    `Full deployment of ${products.slice(productsPerMilestone * 2).map(p => `${p.product} (${p.quantity} units)`).join(" and ")}`,
+                    "Complete documentation and knowledge transfer",
+                    "Final performance report and future recommendations"
+                ],
+                approach: `The final phase ensures all products, scaled to your quantities, are fully operational. We will provide detailed documentation and training, ensuring long-term success and addressing remaining challenges (${itChallenges}).`,
+                risks: [
+                    "Delays in final deployment due to unforeseen issues",
+                    "Knowledge transfer gaps for large user bases"
+                ],
+                kpis: [
+                    "100% product deployment by month 12",
+                    "Complete documentation delivered",
+                    "90% client satisfaction score"
+                ]
+            });
+
+            return milestones;
+        }
+
+>>>>>>> 02d1416781cea117d588af57d6ed32f7f394953e
         // Form submission
         document.getElementById('clientForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -260,6 +342,7 @@
                 products: selectedProducts
             };
 
+<<<<<<< HEAD
             try {
                 // Call Netlify Function to generate roadmap
                 const response = await fetch('/.netlify/functions/generate-roadmap', {
@@ -316,12 +399,58 @@
             } finally {
                 spinner.classList.add('hidden');
             }
+=======
+            // Simulate async AI processing
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            const milestones = generateImplementationPlan(data);
+
+            let roadmapContent = `
+                <h3>Roadmap and Strategy for ${data.clientName}</h3>
+                <p><strong>Client Name:</strong> ${data.clientName}</p>
+                <p><strong>Current IT Challenges:</strong> ${data.itChallenges}</p>
+                <p><strong>Business Goals (Next 12 Months):</strong> ${data.businessGoals}</p>
+                <p><strong>Current IT Infrastructure:</strong> ${data.currentInfra}</p>
+                <p><strong>Recommended Products:</strong></p>
+                <ul>${data.products.map(p => `<li>${p.product} (${p.quantity} units)</li>`).join('')}</ul>
+                <h4>Implementation Plan and Timeline</h4>
+            `;
+
+            milestones.forEach((milestone, index) => {
+                roadmapContent += `
+                    <div>
+                        <h5>Milestone ${index + 1}: ${milestone.name} (${milestone.timeframe})</h5>
+                        <p><strong>What We’ll Deliver:</strong></p>
+                        <ul>${milestone.deliverables.map(d => `<li>${d}</li>`).join('')}</ul>
+                        <p><strong>How We’ll Do It:</strong> ${milestone.approach}</p>
+                        <p><strong>Potential Risks:</strong></p>
+                        <ul>${milestone.risks.map(r => `<li>${r}</li>`).join('')}</ul>
+                        <p><strong>Success Metrics:</strong></p>
+                        <ul>${milestone.kpis.map(k => `<li>${k}</li>`).join('')}</ul>
+                    </div>
+                `;
+            });
+
+            roadmapContent += `
+                <p><strong>Next Steps:</strong></p>
+                <p>We will schedule a kickoff meeting to finalize the timeline and assign resources. Our team will provide regular updates and ensure all milestones are met to support your business goals.</p>
+            `;
+
+            const roadmapContentDiv = document.getElementById('roadmapContent');
+            roadmapContentDiv.innerHTML = roadmapContent;
+            document.getElementById('roadmapPreview').classList.remove('hidden');
+            spinner.classList.add('hidden');
+
+            // Log content for debugging
+            console.log('Roadmap Content:', roadmapContentDiv.innerHTML);
+>>>>>>> 02d1416781cea117d588af57d6ed32f7f394953e
         });
 
         // Download PDF
         function downloadPDF() {
             const element = document.getElementById('roadmapContent');
             console.log('Attempting to generate PDF with content:', element.innerHTML);
+<<<<<<< HEAD
             const opt = {
                 margin: 0.5,
                 filename: 'Roadmap_Strategy.pdf',
@@ -333,6 +462,38 @@
                 html2pdf().from(element).set(opt).save().catch(err => {
                     console.error('PDF generation error:', err);
                     alert('Failed to generate PDF. Please try again.');
+=======
+
+            setTimeout(() => {
+                html2canvas(element, { scale: 2 }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF({
+                        orientation: 'portrait',
+                        unit: 'in',
+                        format: 'letter'
+                    });
+
+                    const imgWidth = 7.5; // Width in inches (letter page width - margins)
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    let heightLeft = imgHeight;
+                    let position = 0.5; // Top margin
+
+                    pdf.addImage(imgData, 'JPEG', 0.5, position, imgWidth, imgHeight);
+                    heightLeft -= 10.5; // Page height minus margins
+
+                    while (heightLeft > 0) {
+                        pdf.addPage();
+                        position = heightLeft - imgHeight + 0.5;
+                        pdf.addImage(imgData, 'JPEG', 0.5, position, imgWidth, imgHeight);
+                        heightLeft -= 10.5;
+                    }
+
+                    pdf.save('Roadmap_Strategy.pdf');
+                }).catch(err => {
+                    console.error('PDF generation error:', err);
+                    alert('Failed to generate PDF. Please try again or check the console for errors.');
+>>>>>>> 02d1416781cea117d588af57d6ed32f7f394953e
                 });
             }, 500);
         }
