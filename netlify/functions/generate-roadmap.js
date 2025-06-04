@@ -1,8 +1,24 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': 'https://MushiDee.github.io',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      },
+      body: ''
+    };
+  }
+
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return {
+      statusCode: 405,
+      headers: { 'Access-Control-Allow-Origin': 'https://MushiDee.github.io' },
+      body: 'Method Not Allowed'
+    };
   }
 
   try {
@@ -31,7 +47,7 @@ exports.handler = async function(event, context) {
       - nextSteps: String describing next steps
     `;
 
-    // Call xAI Grok API (replace with your API key)
+    // Call xAI Grok API
     const response = await fetch('https://api.x.ai/v1/grok', {
       method: 'POST',
       headers: {
@@ -46,20 +62,30 @@ exports.handler = async function(event, context) {
     });
 
     if (!response.ok) {
-      throw new Error('Grok API request failed');
+      throw new Error(`Grok API request failed: ${response.statusText}`);
     }
 
-    const { text } = await response.json();
-    const roadmap = JSON.parse(text); // Assume Grok returns JSON-parsable text
+    const apiResponse = await response.json();
+    console.log('Raw Grok API response:', apiResponse);
+
+    let roadmap;
+    try {
+      roadmap = JSON.parse(apiResponse.text);
+    } catch (e) {
+      console.error('Invalid JSON response:', apiResponse.text);
+      throw new Error('Invalid JSON response from Grok API');
+    }
 
     return {
       statusCode: 200,
+      headers: { 'Access-Control-Allow-Origin': 'https://MushiDee.github.io' },
       body: JSON.stringify({ roadmap })
     };
   } catch (error) {
     console.error('Error:', error);
     return {
       statusCode: 500,
+      headers: { 'Access-Control-Allow-Origin': 'https://MushiDee.github.io' },
       body: JSON.stringify({ error: 'Failed to generate roadmap' })
     };
   }
