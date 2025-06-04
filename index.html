@@ -1,0 +1,344 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Roadmap Tool</title>
+    <link rel="stylesheet" href="tailwind.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        .pdf-content {
+            font-family: Arial, sans-serif;
+            font-size: 12pt;
+            color: #000;
+            line-height: 1.5;
+        }
+        .pdf-content h3, .pdf-content h4, .pdf-content h5 {
+            font-weight: bold;
+            margin-top: 1em;
+        }
+        .pdf-content ul {
+            list-style: disc;
+            padding-left: 20px;
+        }
+        .pdf-content p {
+            margin: 0.5em 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-6 max-w-4xl">
+        <h1 class="text-3xl font-bold text-center mb-6">Sales Roadmap Tool</h1>
+
+        <!-- Instructions -->
+        <div class="bg-blue-100 p-4 rounded-lg mb-6">
+            <h2 class="text-lg font-semibold mb-2">How to Use This Tool</h2>
+            <p class="text-sm">1. Add or remove products in the "Manage Products" section.<br>
+               2. Fill out the client form, select products, and specify quantities.<br>
+               3. Click "Generate Roadmap" to create an AI-generated plan.<br>
+               4. Review and download the PDF to include with your proposal.</p>
+        </div>
+
+        <!-- Product Management Section -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-4">Manage Products</h2>
+            <div class="flex space-x-2 mb-4">
+                <input id="newProduct" type="text" placeholder="Add new product" class="flex-1 p-2 border rounded">
+                <button onclick="addProduct()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add</button>
+            </div>
+            <ul id="productList" class="list-disc pl-5"></ul>
+        </div>
+
+        <!-- Client Questions Form -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-4">Client Questions</h2>
+            <form id="clientForm">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Client Name</label>
+                    <input type="text" name="clientName" class="w-full p-2 border rounded" required>
+                    <p class="text-red-500 text-sm hidden error">Please enter a client name.</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Current IT Challenges</label>
+                    <textarea name="itChallenges" class="w-full p-2 border rounded" rows="4" required></textarea>
+                    <p class="text-red-500 text-sm hidden error">Please describe the IT challenges.</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Business Goals for Next 12 Months</label>
+                    <textarea name="businessGoals" class="w-full p-2 border rounded" rows="4" required></textarea>
+                    <p class="text-red-500 text-sm hidden error">Please describe the business goals.</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Current IT Infrastructure</label>
+                    <textarea name="currentInfra" class="w-full p-2 border rounded" rows="4" required></textarea>
+                    <p class="text-red-500 text-sm hidden error">Please describe the current infrastructure.</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Select Products and Quantities</label>
+                    <div id="productCheckboxes" class="grid grid-cols-1 gap-2"></div>
+                    <p id="productError" class="text-red-500 text-sm hidden">Please select at least one product and specify quantities.</p>
+                </div>
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center">
+                    <span>Generate Roadmap</span>
+                    <svg id="loadingSpinner" class="animate-spin h-5 w-5 ml-2 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                </button>
+            </form>
+        </div>
+
+        <!-- Roadmap Preview -->
+        <div id="roadmapPreview" class="hidden bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Roadmap Preview</h2>
+            <div id="roadmapContent" class="pdf-content"></div>
+            <button onclick="downloadPDF()" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Download as PDF</button>
+        </div>
+    </div>
+
+    <script>
+        // Initial product list
+        let products = [
+            "Managed Vendors",
+            "Managed remote Helpdesk",
+            "Managed Onsite Support technician (in hours)",
+            "Managed M365 instance",
+            "Managed Local Area network service",
+            "Managed Servers",
+            "Managed Firewalls",
+            "Managed Azure IaaS service",
+            "Managed Cybersecurity & SOC service"
+        ];
+
+        // Load products from localStorage if available
+        if (localStorage.getItem('products')) {
+            products = JSON.parse(localStorage.getItem('products'));
+        }
+
+        // Populate product list and checkboxes
+        function populateProducts() {
+            const productList = document.getElementById('productList');
+            const productCheckboxes = document.getElementById('productCheckboxes');
+            productList.innerHTML = '';
+            productCheckboxes.innerHTML = '';
+
+            products.forEach((product, index) => {
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center';
+                li.innerHTML = `<span>${product}</span><button onclick="removeProduct(${index})" class="text-red-500 hover:text-red-700">Remove</button>`;
+                productList.appendChild(li);
+
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2';
+                div.innerHTML = `
+                    <label class="flex items-center">
+                        <input type="checkbox" name="products" value="${product}" class="mr-2" onchange="toggleQuantityInput(this)">
+                        ${product}
+                    </label>
+                    <input type="number" name="quantity_${product}" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                `;
+                productCheckboxes.appendChild(div);
+            });
+        }
+
+        // Toggle quantity input visibility and enable/disable
+        function toggleQuantityInput(checkbox) {
+            const quantityInput = checkbox.parentElement.nextElementSibling;
+            if (checkbox.checked) {
+                quantityInput.classList.remove('hidden');
+                quantityInput.disabled = false;
+            } else {
+                quantityInput.classList.add('hidden');
+                quantityInput.disabled = true;
+                quantityInput.value = '';
+            }
+        }
+
+        // Add new product
+        function addProduct() {
+            const newProduct = document.getElementById('newProduct').value.trim();
+            if (newProduct && !products.includes(newProduct)) {
+                products.push(newProduct);
+                localStorage.setItem('products', JSON.stringify(products));
+                document.getElementById('newProduct').value = '';
+                populateProducts();
+            }
+        }
+
+        // Remove product
+        function removeProduct(index) {
+            products.splice(index, 1);
+            localStorage.setItem('products', JSON.stringify(products));
+            populateProducts();
+        }
+
+        // Validate form
+        function validateForm(formData) {
+            let isValid = true;
+            document.querySelectorAll('.error').forEach(error => error.classList.add('hidden'));
+            document.getElementById('productError').classList.add('hidden');
+
+            ['clientName', 'itChallenges', 'businessGoals', 'currentInfra'].forEach(field => {
+                if (!formData.get(field)) {
+                    const input = document.querySelector(`[name="${field}"]`);
+                    input.nextElementSibling.classList.remove('hidden');
+                    isValid = false;
+                }
+            });
+
+            const selectedProducts = formData.getAll('products').map(product => ({
+                product,
+                quantity: formData.get(`quantity_${product}`)
+            })).filter(p => p.quantity > 0);
+
+            if (selectedProducts.length === 0) {
+                document.getElementById('productError').classList.remove('hidden');
+                isValid = false;
+            }
+
+            return { isValid, selectedProducts };
+        }
+
+        // Form submission
+        document.getElementById('clientForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const spinner = document.getElementById('loadingSpinner');
+            spinner.classList.remove('hidden');
+
+            const formData = new FormData(this);
+            const { isValid, selectedProducts } = validateForm(formData);
+
+            if (!isValid) {
+                spinner.classList.add('hidden');
+                return;
+            }
+
+            const data = {
+                clientName: formData.get('clientName'),
+                itChallenges: formData.get('itChallenges'),
+                businessGoals: formData.get('businessGoals'),
+                currentInfra: formData.get('currentInfra'),
+                products: selectedProducts
+            };
+
+            try {
+                // Call Netlify Function to generate roadmap
+                const response = await fetch('/.netlify/functions/generate-roadmap', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate roadmap');
+                }
+
+                const { roadmap } = await response.json();
+                console.log('AI-generated roadmap:', roadmap);
+
+                // Generate roadmap content
+                let roadmapContent = `
+                    <h3>Roadmap and Strategy for ${data.clientName}</h3>
+                    <p><strong>Client Name:</strong> ${data.clientName}</p>
+                    <p><strong>Current IT Challenges:</strong> ${data.itChallenges}</p>
+                    <p><strong>Business Goals (Next 12 Months):</strong> ${data.businessGoals}</p>
+                    <p><strong>Current IT Infrastructure:</strong> ${data.currentInfra}</p>
+                    <p><strong>Recommended Products:</strong></p>
+                    <ul>${data.products.map(p => `<li>${p.product} (${p.quantity} units)</li>`).join('')}</ul>
+                    <h4>Implementation Plan and Timeline</h4>
+                `;
+
+                roadmap.milestones.forEach((milestone, index) => {
+                    roadmapContent += `
+                        <div>
+                            <h5>Milestone ${index + 1}: ${milestone.name} (${milestone.timeframe})</h5>
+                            <p><strong>What We’ll Deliver:</strong></p>
+                            <ul>${milestone.deliverables.map(d => `<li>${d}</li>`).join('')}</ul>
+                            <p><strong>How We’ll Do It:</strong> ${milestone.approach}</p>
+                            <p><strong>Potential Risks:</strong></p>
+                            <ul>${milestone.risks.map(r => `<li>${r}</li>`).join('')}</ul>
+                            <p><strong>Success Metrics:</strong></p>
+                            <ul>${milestone.kpis.map(k => `<li>${k}</li>`).join('')}</ul>
+                        </div>
+                    `;
+                });
+
+                roadmapContent += `
+                    <p><strong>Next Steps:</strong></p>
+                    <p>${roadmap.nextSteps}</p>
+                `;
+
+                const roadmapContentDiv = document.getElementById('roadmapContent');
+                roadmapContentDiv.innerHTML = roadmapContent;
+                document.getElementById('roadmapPreview').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error generating roadmap:', error);
+                alert('Failed to generate roadmap. Please try again or contact support.');
+            } finally {
+                spinner.classList.add('hidden');
+            }
+        });
+
+        // Download PDF
+        function downloadPDF() {
+            const element = document.getElementById('roadmapContent');
+            console.log('Attempting to generate PDF with content:', element.innerHTML);
+            const opt = {
+                margin: 0.5,
+                filename: 'Roadmap_Strategy.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            setTimeout(() => {
+                html2pdf().from(element).set(opt).save().catch(err => {
+                    console.error('PDF generation error:', err);
+                    alert('Failed to generate PDF. Please try again.');
+                });
+            }, 500);
+        }
+
+        // Initialize products
+        populateProducts();
+    </script>
+</body>
+</html>
