@@ -72,8 +72,8 @@
         <!-- Instructions -->
         <div class="bg-blue-100 p-4 rounded-lg mb-6">
             <h2 class="text-lg font-semibold mb-2">How to Use This Tool</h2>
-            <p class="text-sm">1. Add or remove additional products in the "Manage Products" section.<br>
-               2. Fill out the client form, select products (Managed Services is required), and specify quantities.<br>
+            <p class="text-sm">1. Add or remove additional products in the "Manage Additional Products" section.<br>
+               2. Fill out the client form, select products (all Managed Services are available), and specify quantities.<br>
                3. Click "Generate Roadmap" to create an AI-generated plan.<br>
                4. Review and download the PDF to include with your proposal.</p>
         </div>
@@ -118,12 +118,68 @@
                         <!-- Fixed Managed Services -->
                         <div class="flex items-center space-x-2">
                             <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Services" class="mr-2" checked disabled>
-                                Managed Services (Required)
+                                <input type="checkbox" name="products" value="Managed Vendors" class="mr-2" onchange="toggleQuantityInput(this)">
+                                Managed Vendors
                             </label>
-                            <input type="number" name="quantity_Managed Services" class="quantity-input w-20 p-1 border rounded" placeholder="Qty" min="1" required>
+                            <input type="number" name="quantity_Managed Vendors" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
                         </div>
-                        <!-- Other products will be populated here -->
+                        <div class="flex items-center space-x-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="products" value="Managed remote Helpdesk" class="mr-2" onchange="toggleQuantityInput(this)">
+                                Managed remote Helpdesk
+                            </label>
+                            <input type="number" name="quantity_Managed remote Helpdesk" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="products" value="Managed Onsite Support technician (in hours)" class="mr-2" onchange="toggleQuantityInput(this)">
+                                Managed Onsite Support technician (in hours)
+                            </label>
+                            <input type="number" name="quantity_Managed Onsite Support technician (in hours)" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="products" value="Managed M365 instance" class="mr-2" onchange="toggleQuantityInput(this)">
+                                Managed M365 instance
+                            </label>
+                            <input type="number" name="quantity_Managed M365 instance" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="products" value="Managed Local Area network service" class="mr-2" onchange="toggleQuantityInput(this)">
+                                Managed Local Area network service
+                            </label>
+                            <input type="number" name="quantity_Managed Local Area network service" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="products" value="Managed Servers" class="mr-2" onchange="toggleQuantityInput(this)">
+                                Managed Servers
+                            </label>
+                            <input type="number" name="quantity_Managed Servers" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="products" value="Managed Firewalls" class="mr-2" onchange="toggleQuantityInput(this)">
+                                Managed Firewalls
+                            </label>
+                            <input type="number" name="quantity_Managed Firewalls" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="products" value="Managed Azure IaaS service" class="mr-2" onchange="toggleQuantityInput(this)">
+                                Managed Azure IaaS service
+                            </label>
+                            <input type="number" name="quantity_Managed Azure IaaS service" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="products" value="Managed Cybersecurity & SOC service" class="mr-2" onchange="toggleQuantityInput(this)">
+                                Managed Cybersecurity & SOC service
+                            </label>
+                            <input type="number" name="quantity_Managed Cybersecurity & SOC service" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                        </div>
+                        <!-- Additional products will be populated here -->
                     </div>
                     <p id="productError" class="text-red-500 text-sm hidden">Please select at least one product and specify quantities for all selected products.</p>
                 </div>
@@ -146,8 +202,8 @@
     </div>
 
     <script>
-        // Initial product list (excluding Managed Services, which is fixed)
-        let products = [
+        // Fixed Managed Services (non-removable)
+        const fixedProducts = [
             "Managed Vendors",
             "Managed remote Helpdesk",
             "Managed Onsite Support technician (in hours)",
@@ -159,23 +215,26 @@
             "Managed Cybersecurity & SOC service"
         ];
 
-        // Load products from localStorage if available
-        if (localStorage.getItem('products')) {
-            products = JSON.parse(localStorage.getItem('products'));
+        // Additional products (removable)
+        let additionalProducts = [];
+
+        // Load additional products from localStorage if available
+        if (localStorage.getItem('additionalProducts')) {
+            additionalProducts = JSON.parse(localStorage.getItem('additionalProducts'));
         }
 
         // Populate product list and checkboxes
         function populateProducts() {
             const productList = document.getElementById('productList');
             const productCheckboxes = document.getElementById('productCheckboxes');
-            // Keep Managed Services checkbox, clear others
-            const managedServicesDiv = productCheckboxes.querySelector('div:first-child');
+            // Keep fixed Managed Services checkboxes, clear additional ones
+            const fixedDivs = Array.from(productCheckboxes.children).slice(0, fixedProducts.length);
             productCheckboxes.innerHTML = '';
-            productCheckboxes.appendChild(managedServicesDiv);
+            fixedDivs.forEach(div => productCheckboxes.appendChild(div));
 
-            // Populate removable products
+            // Populate additional products
             productList.innerHTML = '';
-            products.forEach((product, index) => {
+            additionalProducts.forEach((product, index) => {
                 // Product list item
                 const li = document.createElement('li');
                 li.className = 'flex justify-between items-center';
@@ -212,9 +271,9 @@
         // Add new product
         function addProduct() {
             const newProduct = document.getElementById('newProduct').value.trim();
-            if (newProduct && !products.includes(newProduct) && newProduct !== 'Managed Services') {
-                products.push(newProduct);
-                localStorage.setItem('products', JSON.stringify(products));
+            if (newProduct && !additionalProducts.includes(newProduct) && !fixedProducts.includes(newProduct)) {
+                additionalProducts.push(newProduct);
+                localStorage.setItem('additionalProducts', JSON.stringify(additionalProducts));
                 document.getElementById('newProduct').value = '';
                 populateProducts();
             }
@@ -222,8 +281,8 @@
 
         // Remove product
         function removeProduct(index) {
-            products.splice(index, 1);
-            localStorage.setItem('products', JSON.stringify(products));
+            additionalProducts.splice(index, 1);
+            localStorage.setItem('additionalProducts', JSON.stringify(additionalProducts));
             populateProducts();
         }
 
@@ -245,15 +304,6 @@
                 product,
                 quantity: formData.get(`quantity_${product}`)
             })).filter(p => p.quantity > 0);
-
-            // Ensure Managed Services is included with a quantity
-            const managedServicesQuantity = formData.get('quantity_Managed Services');
-            if (!managedServicesQuantity || managedServicesQuantity <= 0) {
-                document.getElementById('productError').classList.remove('hidden');
-                isValid = false;
-            } else {
-                selectedProducts.push({ product: 'Managed Services', quantity: managedServicesQuantity });
-            }
 
             if (selectedProducts.length === 0) {
                 document.getElementById('productError').classList.remove('hidden');
