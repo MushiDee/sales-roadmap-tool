@@ -322,7 +322,6 @@
         function downloadPDF() {
             const element = document.getElementById('roadmapContent');
             console.log('Attempting to generate PDF with content:', element.innerHTML);
-<<<<<<< HEAD
             const opt = {
                 margin: 0.5,
                 filename: 'Roadmap_Strategy.pdf',
@@ -334,38 +333,6 @@
                 html2pdf().from(element).set(opt).save().catch(err => {
                     console.error('PDF generation error:', err);
                     alert('Failed to generate PDF. Please try again.');
-=======
-
-            setTimeout(() => {
-                html2canvas(element, { scale: 2 }).then(canvas => {
-                    const imgData = canvas.toDataURL('image/jpeg', 0.98);
-                    const { jsPDF } = window.jspdf;
-                    const pdf = new jsPDF({
-                        orientation: 'portrait',
-                        unit: 'in',
-                        format: 'letter'
-                    });
-
-                    const imgWidth = 7.5; // Width in inches (letter page width - margins)
-                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                    let heightLeft = imgHeight;
-                    let position = 0.5; // Top margin
-
-                    pdf.addImage(imgData, 'JPEG', 0.5, position, imgWidth, imgHeight);
-                    heightLeft -= 10.5; // Page height minus margins
-
-                    while (heightLeft > 0) {
-                        pdf.addPage();
-                        position = heightLeft - imgHeight + 0.5;
-                        pdf.addImage(imgData, 'JPEG', 0.5, position, imgWidth, imgHeight);
-                        heightLeft -= 10.5;
-                    }
-
-                    pdf.save('Roadmap_Strategy.pdf');
-                }).catch(err => {
-                    console.error('PDF generation error:', err);
-                    alert('Failed to generate PDF. Please try again or check the console for errors.');
->>>>>>> 02d1416781cea117d588af57d6ed32f7f394953e
                 });
             }, 500);
         }
