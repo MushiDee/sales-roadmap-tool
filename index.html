@@ -72,15 +72,15 @@
         <!-- Instructions -->
         <div class="bg-blue-100 p-4 rounded-lg mb-6">
             <h2 class="text-lg font-semibold mb-2">How to Use This Tool</h2>
-            <p class="text-sm">1. Add or remove products in the "Manage Products" section.<br>
-               2. Fill out the client form, select products, and specify quantities.<br>
+            <p class="text-sm">1. Add or remove additional products in the "Manage Products" section.<br>
+               2. Fill out the client form, select products (Managed Services is required), and specify quantities.<br>
                3. Click "Generate Roadmap" to create an AI-generated plan.<br>
                4. Review and download the PDF to include with your proposal.</p>
         </div>
 
         <!-- Product Management Section -->
         <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h2 class="text-xl font-semibold mb-4">Manage Products</h2>
+            <h2 class="text-xl font-semibold mb-4">Manage Additional Products</h2>
             <div class="flex space-x-2 mb-4">
                 <input id="newProduct" type="text" placeholder="Add new product" class="flex-1 p-2 border rounded">
                 <button onclick="addProduct()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add</button>
@@ -114,8 +114,18 @@
                 </div>
                 <div class="mb-4">
                     <label class="block text-sm font-medium mb-1">Select Products and Quantities</label>
-                    <div id="productCheckboxes" class="grid grid-cols-1 gap-2"></div>
-                    <p id="productError" class="text-red-500 text-sm hidden">Please select at least one product and specify quantities.</p>
+                    <div id="productCheckboxes" class="grid grid-cols-1 gap-2">
+                        <!-- Fixed Managed Services -->
+                        <div class="flex items-center space-x-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="products" value="Managed Services" class="mr-2" checked disabled>
+                                Managed Services (Required)
+                            </label>
+                            <input type="number" name="quantity_Managed Services" class="quantity-input w-20 p-1 border rounded" placeholder="Qty" min="1" required>
+                        </div>
+                        <!-- Other products will be populated here -->
+                    </div>
+                    <p id="productError" class="text-red-500 text-sm hidden">Please select at least one product and specify quantities for all selected products.</p>
                 </div>
                 <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center">
                     <span>Generate Roadmap</span>
@@ -136,7 +146,7 @@
     </div>
 
     <script>
-        // Initial product list
+        // Initial product list (excluding Managed Services, which is fixed)
         let products = [
             "Managed Vendors",
             "Managed remote Helpdesk",
@@ -158,15 +168,21 @@
         function populateProducts() {
             const productList = document.getElementById('productList');
             const productCheckboxes = document.getElementById('productCheckboxes');
-            productList.innerHTML = '';
+            // Keep Managed Services checkbox, clear others
+            const managedServicesDiv = productCheckboxes.querySelector('div:first-child');
             productCheckboxes.innerHTML = '';
+            productCheckboxes.appendChild(managedServicesDiv);
 
+            // Populate removable products
+            productList.innerHTML = '';
             products.forEach((product, index) => {
+                // Product list item
                 const li = document.createElement('li');
                 li.className = 'flex justify-between items-center';
                 li.innerHTML = `<span>${product}</span><button onclick="removeProduct(${index})" class="text-red-500 hover:text-red-700">Remove</button>`;
                 productList.appendChild(li);
 
+                // Product checkbox
                 const div = document.createElement('div');
                 div.className = 'flex items-center space-x-2';
                 div.innerHTML = `
@@ -196,7 +212,7 @@
         // Add new product
         function addProduct() {
             const newProduct = document.getElementById('newProduct').value.trim();
-            if (newProduct && !products.includes(newProduct)) {
+            if (newProduct && !products.includes(newProduct) && newProduct !== 'Managed Services') {
                 products.push(newProduct);
                 localStorage.setItem('products', JSON.stringify(products));
                 document.getElementById('newProduct').value = '';
@@ -230,6 +246,15 @@
                 quantity: formData.get(`quantity_${product}`)
             })).filter(p => p.quantity > 0);
 
+            // Ensure Managed Services is included with a quantity
+            const managedServicesQuantity = formData.get('quantity_Managed Services');
+            if (!managedServicesQuantity || managedServicesQuantity <= 0) {
+                document.getElementById('productError').classList.remove('hidden');
+                isValid = false;
+            } else {
+                selectedProducts.push({ product: 'Managed Services', quantity: managedServicesQuantity });
+            }
+
             if (selectedProducts.length === 0) {
                 document.getElementById('productError').classList.remove('hidden');
                 isValid = false;
@@ -261,7 +286,7 @@
             };
 
             try {
-                // Call Netlify Function to generate roadmap
+                // Replace with your Netlify site’s function URL after deployment
                 const response = await fetch('https://sales-roadmap-tool.netlify.app/.netlify/functions/generate-roadmap', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -269,7 +294,7 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to generate roadmap');
+                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
                 }
 
                 const { roadmap } = await response.json();
@@ -312,7 +337,7 @@
                 document.getElementById('roadmapPreview').classList.remove('hidden');
             } catch (error) {
                 console.error('Error generating roadmap:', error);
-                alert('Failed to generate roadmap. Please try again or contact support.');
+                alert('Failed to generate roadmap. Please check your Netlify Function setup or contact support.');
             } finally {
                 spinner.classList.add('hidden');
             }
