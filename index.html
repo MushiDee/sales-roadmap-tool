@@ -44,7 +44,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Roadmap Tool</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-docx-js/0.3.1/html-docx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html-docx-js-typescript@0.1.5/dist/html-docx.js"></script>
     <style>
         body {
             font-family: Calibri, sans-serif;
@@ -465,11 +465,12 @@
                 const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
                 let roadmapContent = `
                     <div class="cover-page">
-                        <img src="https://via.placeholder.com/200x50.png?text=Your+Logo" alt="Company Logo" style="max-width: 200px;">
+                        <!-- Replace with your logo URL or Base64-encoded image -->
+                        <img src="https://via.placeholder.com/200x50.png?text=JEC+Technologies+Logo" alt="JEC Technologies Logo" style="max-width: 200px;">
                         <h1 style="font-size: 24pt;">IT Roadmap and Strategy</h1>
                         <p style="font-size: 14pt;">Prepared for ${data.clientName}</p>
-                        <p>Prepared by: Your Company Name</p>
-                        <p>Contact: info@yourcompany.com | (123) 456-7890</p>
+                        <p>Prepared by: JEC Technologies (Pty) Ltd</p>
+                        <p>Contact: info@jectechnologies.co.za | (+27) 123-456-7890</p>
                         <p>Date: ${currentDate}</p>
                     </div>
                     <div class="toc">
@@ -483,7 +484,7 @@
                     </div>
                     <div id="overview">
                         <h2 style="font-size: 14pt;">1. Executive Summary</h2>
-                        <p>This roadmap outlines a strategic 12-month plan to address ${data.clientName}'s IT challenges and achieve their business goals through tailored managed services. By leveraging our expertise, we aim to enhance system reliability, security, and scalability.</p>
+                        <p>This roadmap outlines a strategic 12-month plan to address ${data.clientName}'s IT challenges and achieve their business goals through tailored managed services. By leveraging JEC Technologies (Pty) Ltd's expertise, we aim to enhance system reliability, security, and scalability.</p>
                     </div>
                     <div id="client">
                         <h2 style="font-size: 14pt;">2. Client Overview</h2>
@@ -572,7 +573,7 @@
                         <p>${roadmap.nextSteps}</p>
                     </div>
                     <div class="footer">
-                        <p>Your Company Name | IT Roadmap for ${data.clientName} | Page <span class="page-number"></span> | ${currentDate}</p>
+                        <p>JEC Technologies (Pty) Ltd | IT Roadmap for ${data.clientName} | Page <span class="page-number"></span> | ${currentDate}</p>
                     </div>
                 `;
 
@@ -625,7 +626,7 @@
 
             const header = `
                 <div class="header">
-                    <p>Your Company Name | IT Roadmap for ${document.querySelector('[name="clientName"]').value} | ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    <p>JEC Technologies (Pty) Ltd | IT Roadmap for ${document.querySelector('[name="clientName"]').value} | ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 </div>
             `;
             const content = header + sourceElement.innerHTML;
@@ -656,7 +657,7 @@
 
             try {
                 console.log('Starting Word generation...');
-                const converted = htmlDocx.asBlob(docContent);
+                const converted = window.htmlDocx.asBlob(docContent);
                 const url = window.URL.createObjectURL(converted);
                 const link = document.createElement('a');
                 link.href = url;
