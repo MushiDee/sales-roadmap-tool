@@ -8,25 +8,35 @@ function repairJson(jsonString) {
     let repaired = jsonString.trim();
     // Remove trailing incomplete text
     repaired = repaired.replace(/,\s*[^,{}[\]]*$/, '');
+    // Remove trailing commas before closing braces/brackets
+    repaired = repaired.replace(/,\s*([}\]])/g, '$1');
     // Count open and close braces/brackets
     let openBraces = (repaired.match(/{/g) || []).length;
     let closeBraces = (repaired.match(/}/g) || []).length;
     let openBrackets = (repaired.match(/\[/g) || []).length;
     let closeBrackets = (repaired.match(/\]/g) || []).length;
-    // Add missing closing braces
-    while (openBraces > closeBraces) {
-      repaired += '}';
-      closeBraces++;
-    }
-    // Add missing closing brackets
+    // Add missing closing brackets for arrays
     while (openBrackets > closeBrackets) {
       repaired += ']';
       closeBrackets++;
     }
-    // Remove trailing commas
-    repaired = repaired.replace(/,\s*([}\]])/g, '$1');
+    // Add missing closing braces for objects
+    while (openBraces > closeBraces) {
+      repaired += '}';
+      closeBraces++;
+    }
+    // Ensure milestones array is closed if open
+    if (repaired.includes('"milestones":[') && closeBrackets <= openBrackets) {
+      repaired = repaired.replace(/,\s*$/, '') + ']';
+      if (!repaired.endsWith('}')) repaired += '}';
+    }
     try {
-      return JSON.parse(repaired);
+      const parsed = JSON.parse(repaired);
+      // Validate roadmap structure
+      if (!parsed.milestones || !Array.isArray(parsed.milestones) || !parsed.nextSteps) {
+        throw new Error('Invalid roadmap structure');
+      }
+      return parsed;
     } catch (err) {
       console.error('Failed to repair JSON:', repaired);
       throw new Error(`Failed to repair JSON: ${err.message}`);
@@ -66,25 +76,21 @@ exports.handler = async function(event, context) {
     }
 
     const prompt = `
-      Generate a 12-month IT roadmap with three milestones for the client below. Each milestone needs:
-      - Name and timeframe (e.g., Months 1-4)
-      - 3-5 deliverables
-      - Non-technical approach explanation
-      - 2-3 risks
-      - 3-5 KPIs
-      Include next steps. Keep it clear and professional.
+      Generate a 12-month IT roadmap with 3 milestones for client ${clientName}. Each milestone needs:
+      - Name, timeframe
+      - 3 deliverables
+      - Brief approach
+      - 2 risks
+      - 3 KPIs
+      Include next steps. Keep it concise.
 
-      Client:
-      - Name: ${clientName}
-      - IT Challenges: ${itChallenges}
-      - Business Goals: ${businessGoals}
-      - Infrastructure: ${currentInfra}
-      - Products: ${products.map(p => `${p.product} (${p.quantity} units)`).join(', ')}
+      Client Info:
+      - Challenges: ${itChallenges}
+      - Goals: ${businessGoals}
+      - Infra: ${currentInfra}
+      - Products: ${products.map(p => `${p.product} (${p.quantity})`).join(', ')}
 
-      Return JSON.stringify({
-        milestones: [{ name: string, timeframe: string, deliverables: string[], approach: string, risks: string[], kpis: string[] }, ...],
-        nextSteps: string
-      }).
+      Return JSON.stringify({ milestones: [{ name, timeframe, deliverables: [], approach, risks: [], kpis: [] }, ...], nextSteps: "" }).
     `;
 
     console.log('Sending request to Grok API with key:', process.env.GROK_API_KEY.slice(0, 4) + '...');
@@ -115,7 +121,7 @@ exports.handler = async function(event, context) {
           model: 'grok-3',
           stream: false,
           temperature: 0,
-          max_tokens: 700
+          max_tokens: 800
         }),
         signal: controller.signal
       });
@@ -148,13 +154,13 @@ exports.handler = async function(event, context) {
             {
               name: 'Initial Setup',
               timeframe: 'Months 1-4',
-              deliverables: ['Assess current IT systems', 'Plan initial product deployment'],
-              approach: 'Review your infrastructure and selected products to create a deployment plan.',
-              risks: ['Delays due to slow API response', 'Incomplete data access'],
-              kpis: ['Complete assessment in 6 weeks', 'Plan approved by Month 2']
+              deliverables: ['Assess IT systems', 'Plan product deployment'],
+              approach: 'Review infrastructure and products to create a deployment plan.',
+              risks: ['Delays due to API response', 'Data access issues'],
+              kpis: ['Assessment in 6 weeks', 'Plan approved by Month 2']
             }
           ],
-          nextSteps: 'Schedule a meeting to discuss initial setup, as the AI roadmap generation timed out. Contact support for assistance.'
+          nextSteps: 'Schedule a meeting to discuss setup, as AI roadmap timed out. Contact support.'
         };
       } else {
         throw error;
