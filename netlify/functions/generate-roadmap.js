@@ -1,11 +1,13 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
+  const corsOrigin = 'https://mushidee.github.io'; // Corrected to lowercase 'd'
+
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
       headers: {
-        'Access-Control-Allow-Origin': 'https://MushiDee.github.io',
+        'Access-Control-Allow-Origin': corsOrigin,
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type'
       },
@@ -16,7 +18,7 @@ exports.handler = async function(event, context) {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      headers: { 'Access-Control-Allow-Origin': 'https://MushiDee.github.io' },
+      headers: { 'Access-Control-Allow-Origin': corsOrigin },
       body: 'Method Not Allowed'
     };
   }
@@ -25,7 +27,11 @@ exports.handler = async function(event, context) {
     const data = JSON.parse(event.body);
     const { clientName, itChallenges, businessGoals, currentInfra, products } = data;
 
-    // Construct enhanced prompt with product-specific response points
+    if (!clientName || !itChallenges || !businessGoals || !currentInfra || !products || !Array.isArray(products)) {
+      throw new Error('Invalid input data');
+    }
+
+    // Construct prompt
     const prompt = `
       You are an expert IT consultant for a managed services provider specializing in IT support and Microsoft Cloud services. Based on the provided client information, create a 12-month IT roadmap with three milestones, each tailored to the client's needs, infrastructure, and selected products. For each selected product, include specific response points detailing:
       - How the product addresses the client's IT challenges (e.g., "Managed remote Helpdesk reduces outage response time").
@@ -66,7 +72,8 @@ exports.handler = async function(event, context) {
     });
 
     if (!response.ok) {
-      throw new Error(`Grok API request failed: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`Grok API request failed: ${response.status} - ${errorText}`);
     }
 
     const apiResponse = await response.json();
@@ -74,9 +81,12 @@ exports.handler = async function(event, context) {
 
     let roadmap;
     try {
+      if (!apiResponse.text) {
+        throw new Error('No text field in API response');
+      }
       roadmap = JSON.parse(apiResponse.text);
     } catch (e) {
-      console.error('Invalid JSON response:', apiResponse.text);
+      console.error('Invalid JSON response:', apiResponse.text || apiResponse);
       // Fallback roadmap
       roadmap = {
         milestones: [
@@ -102,20 +112,20 @@ exports.handler = async function(event, context) {
     // Ensure productsUsed is included
     roadmap.milestones = roadmap.milestones.map(milestone => ({
       ...milestone,
-      productsUsed: milestone.productsUsed || products.map(p => p.product)
+      productsUsed: milestone.productsUsed && Array.isArray(milestone.productsUsed) ? milestone.productsUsed : products.map(p => p.product)
     }));
 
     return {
       statusCode: 200,
-      headers: { 'Access-Control-Allow-Origin': 'https://MushiDee.github.io' },
+      headers: { 'Access-Control-Allow-Origin': corsOrigin },
       body: JSON.stringify({ roadmap })
     };
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error:', error.message, error.stack);
     return {
       statusCode: 500,
-      headers: { 'Access-Control-Allow-Origin': 'https://MushiDee.github.io' },
-      body: JSON.stringify({ error: 'Failed to generate roadmap' })
+      headers: { 'Access-Control-Allow-Origin': corsOrigin },
+      body: JSON.stringify({ error: `Failed to generate roadmap: ${error.message}` })
     };
   }
 };

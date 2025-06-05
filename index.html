@@ -72,7 +72,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-blue-50">
     <div class="container mx-auto p-6 max-w-4xl">
         <h1 class="text-3xl font-bold text-center mb-6">Sales Roadmap Tool</h1>
 
@@ -342,7 +342,7 @@
                 products: selectedProducts
             };
 
-            console.log('Form data sent to Netlify Function:', data);
+            console.log('Form data sent to Netlify Function:', JSON.stringify(data, null, 2));
 
             try {
                 const response = await fetch('https://sales-roadmap-tool.netlify.app/.netlify/functions/generate-roadmap', {
@@ -374,7 +374,7 @@
                     roadmapContent += `
                         <div>
                             <h5>Milestone ${index + 1}: ${milestone.name} (${milestone.timeframe})</h5>
-                            <p><strong>Products Utilized:</strong> ${milestone.productsUsed.join(', ')}</p>
+                            <p><strong>Products Utilized:</strong> ${milestone.productsUsed ? milestone.productsUsed.join(', ') : 'None'}</p>
                             <p><strong>What We’ll Deliver:</strong></p>
                             <ul>${milestone.deliverables.map(d => `<li>${d}</li>`).join('')}</ul>
                             <p><strong>How We’ll Do It:</strong> ${milestone.approach}</p>
