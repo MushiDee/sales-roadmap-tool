@@ -51,17 +51,26 @@
             font-size: 12pt;
             color: #000;
             line-height: 1.5;
+            max-width: 7.5in;
+            overflow: visible;
+            break-inside: avoid;
         }
         .pdf-content h3, .pdf-content h4, .pdf-content h5 {
             font-weight: bold;
             margin-top: 1em;
+            break-after: avoid;
         }
         .pdf-content ul {
             list-style: disc;
             padding-left: 20px;
+            break-inside: avoid;
         }
         .pdf-content p {
             margin: 0.5em 0;
+            break-inside: avoid;
+        }
+        .pdf-content div {
+            break-inside: avoid;
         }
     </style>
 </head>
@@ -197,7 +206,7 @@
         <div id="roadmapPreview" class="hidden bg-white p-6 rounded-lg shadow-md">
             <h2 class="text-xl font-semibold mb-4">Roadmap Preview</h2>
             <div id="roadmapContent" class="pdf-content"></div>
-            <button onclick="downloadPDF()" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Download as PDF</button>
+            <button onclick="downloadPDF()" class="mt-4 bg-blue-500 text-white mx-auto px-4 py-2 rounded hover:bg-blue-600">Download as PDF</button>
         </div>
     </div>
 
@@ -383,6 +392,7 @@
 
                 const roadmapContentDiv = document.getElementById('roadmapContent');
                 roadmapContentDiv.innerHTML = roadmapContent;
+                console.log('Roadmap content for PDF:', roadmapContentDiv.innerHTML);
                 document.getElementById('roadmapPreview').classList.remove('hidden');
             } catch (error) {
                 console.error('Error generating roadmap:', error);
@@ -400,9 +410,9 @@
                 margin: [0.5, 0.5, 0.5, 0.5],
                 filename: 'Roadmap_Strategy.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
+                html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                pagebreak: { mode: ['css', 'legacy'], avoid: ['h3', 'h4', 'h5', 'ul', 'p', 'div'] }
             };
             setTimeout(() => {
                 html2pdf().from(element).set(opt).save().catch(err => {
