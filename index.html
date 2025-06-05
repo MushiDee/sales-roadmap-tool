@@ -42,9 +42,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sales Roadmap Tool</title>
+    <title>Sales Roadmap Tool - JEC Technologies (Pty) Ltd</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html-docx-js-typescript@0.1.5/dist/html-docx.js"></script>
+    <script src="https://unpkg.com/html-docx-js-typescript@0.1.7/dist/html-docx.js"></script>
     <style>
         body {
             font-family: Calibri, sans-serif;
@@ -180,7 +180,7 @@
 </head>
 <body>
     <div class="container">
-        <h1 style="font-size: 24pt; text-align: center; color: #003087;">Sales Roadmap Tool</h1>
+        <h1 style="font-size: 24pt; text-align: center; color: #003087;">Sales Roadmap Tool - JEC Technologies (Pty) Ltd</h1>
 
         <!-- Instructions -->
         <div class="form-section">
@@ -465,12 +465,12 @@
                 const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
                 let roadmapContent = `
                     <div class="cover-page">
-                        <!-- Replace with your logo URL or Base64-encoded image -->
+                        <!-- Replace with your JEC Technologies logo URL or Base64 -->
                         <img src="https://via.placeholder.com/200x50.png?text=JEC+Technologies+Logo" alt="JEC Technologies Logo" style="max-width: 200px;">
                         <h1 style="font-size: 24pt;">IT Roadmap and Strategy</h1>
                         <p style="font-size: 14pt;">Prepared for ${data.clientName}</p>
                         <p>Prepared by: JEC Technologies (Pty) Ltd</p>
-                        <p>Contact: info@jectechnologies.co.za | (+27) 123-456-7890</p>
+                        <p>Contact: info@jectech.co.za | (+27) 123-456-7890</p>
                         <p>Date: ${currentDate}</p>
                     </div>
                     <div class="toc">
@@ -621,12 +621,20 @@
 
         // Download Word
         function downloadWord() {
+            if (typeof htmlDocx === 'undefined') {
+                console.error('htmlDocx library not loaded');
+                alert('Word export library failed to load. Please try again or download as PDF.');
+                return;
+            }
+
             const sourceElement = document.getElementById('roadmapContent');
             console.log('Source content for Word:', sourceElement.innerHTML);
 
+            const clientName = document.querySelector('[name="clientName"]').value;
+            const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
             const header = `
                 <div class="header">
-                    <p>JEC Technologies (Pty) Ltd | IT Roadmap for ${document.querySelector('[name="clientName"]').value} | ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    <p>JEC Technologies (Pty) Ltd | IT Roadmap for ${clientName} | ${currentDate}</p>
                 </div>
             `;
             const content = header + sourceElement.innerHTML;
@@ -657,16 +665,18 @@
 
             try {
                 console.log('Starting Word generation...');
-                const converted = window.htmlDocx.asBlob(docContent);
-                const url = window.URL.createObjectURL(converted);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = 'Roadmap_Strategy.docx';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-                console.log('Word document generated successfully');
+                setTimeout(() => {
+                    const converted = htmlDocx.asBlob(docContent);
+                    const url = window.URL.createObjectURL(converted);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'Roadmap_Strategy.docx';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                    console.log('Word document generated successfully');
+                }, 500);
             } catch (err) {
                 console.error('Word generation error:', err);
                 alert('Failed to generate Word document. Please try again.');
