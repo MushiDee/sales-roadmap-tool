@@ -51,26 +51,38 @@
             font-size: 12pt;
             color: #000;
             line-height: 1.5;
-            max-width: 7.5in;
-            overflow: visible;
+            width: 7.5in;
+            max-height: 10in;
+            overflow: hidden;
             break-inside: avoid;
+            page-break-inside: avoid;
         }
         .pdf-content h3, .pdf-content h4, .pdf-content h5 {
             font-weight: bold;
-            margin-top: 1em;
+            margin-top: 0.5em;
             break-after: avoid;
+            page-break-after: avoid;
         }
         .pdf-content ul {
             list-style: disc;
             padding-left: 20px;
             break-inside: avoid;
+            page-break-inside: avoid;
         }
         .pdf-content p {
-            margin: 0.5em 0;
+            margin: 0.3em 0;
             break-inside: avoid;
+            page-break-inside: avoid;
         }
         .pdf-content div {
             break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        #pdfTempContainer {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+            width: 7.5in;
         }
     </style>
 </head>
@@ -208,6 +220,9 @@
             <div id="roadmapContent" class="pdf-content"></div>
             <button onclick="downloadPDF()" class="mt-4 bg-blue-500 text-white mx-auto px-4 py-2 rounded hover:bg-blue-600">Download as PDF</button>
         </div>
+
+        <!-- Temporary container for PDF rendering -->
+        <div id="pdfTempContainer" class="pdf-content"></div>
     </div>
 
     <script>
@@ -404,18 +419,28 @@
 
         // Download PDF
         function downloadPDF() {
-            const element = document.getElementById('roadmapContent');
-            console.log('Attempting to generate PDF with content:', element.innerHTML);
+            const sourceElement = document.getElementById('roadmapContent');
+            console.log('Source content for PDF:', sourceElement.innerHTML);
+
+            // Clone content to temporary container
+            const tempContainer = document.getElementById('pdfTempContainer');
+            tempContainer.innerHTML = sourceElement.innerHTML;
+
             const opt = {
                 margin: [0.5, 0.5, 0.5, 0.5],
                 filename: 'Roadmap_Strategy.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-                pagebreak: { mode: ['css', 'legacy'], avoid: ['h3', 'h4', 'h5', 'ul', 'p', 'div'] }
+                pagebreak: { mode: ['css'], avoid: ['h3', 'h4', 'h5', 'ul', 'p', 'div'] }
             };
+
             setTimeout(() => {
-                html2pdf().from(element).set(opt).save().catch(err => {
+                html2pdf().from(tempContainer).set(opt).save().then(() => {
+                    // Clear temporary container
+                    tempContainer.innerHTML = '';
+                    console.log('PDF generated successfully');
+                }).catch(err => {
                     console.error('PDF generation error:', err);
                     alert('Failed to generate PDF. Please try again.');
                 });
