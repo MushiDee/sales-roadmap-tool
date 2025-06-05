@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
-  const corsOrigin = 'https://mushidee.github.io'; // Corrected to lowercase 'd'
+  const corsOrigin = 'https://mushidee.github.io';
 
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -57,15 +57,19 @@ exports.handler = async function(event, context) {
       - nextSteps: string describing actionable next steps with timelines
     `;
 
-    // Call xAI Grok API
-    const response = await fetch('https://api.x.ai/v1/grok', {
+    // Call xAI Grok API (updated endpoint)
+    const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.GROK_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        prompt,
+        model: 'grok-3',
+        messages: [
+          { role: 'system', content: 'You are an expert IT consultant.' },
+          { role: 'user', content: prompt }
+        ],
         max_tokens: 2500,
         temperature: 0.7
       })
@@ -81,12 +85,12 @@ exports.handler = async function(event, context) {
 
     let roadmap;
     try {
-      if (!apiResponse.text) {
-        throw new Error('No text field in API response');
+      if (!apiResponse.choices || !apiResponse.choices[0]?.message?.content) {
+        throw new Error('No valid content in API response');
       }
-      roadmap = JSON.parse(apiResponse.text);
+      roadmap = JSON.parse(apiResponse.choices[0].message.content);
     } catch (e) {
-      console.error('Invalid JSON response:', apiResponse.text || apiResponse);
+      console.error('Invalid JSON response:', apiResponse.choices?.[0]?.message?.content || apiResponse);
       // Fallback roadmap
       roadmap = {
         milestones: [
