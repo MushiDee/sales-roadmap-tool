@@ -42,42 +42,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>index Roadmap Tool</title>
+    <title>Sales Roadmap Tool</title>
     <link rel="stylesheet" href="tailwind.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         .pdf-content {
-            font-family: Arial, Helvetica, sans-serif !important;
-            font-size: 12pt !important;
-            color: #000000 !important;
-            line-height: 1.5 !important;
-            background-color: #ffffff !important;
-            padding: 20px !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12pt;
+            color: #000000;
+            line-height: 1.5;
+            background-color: #ffffff;
+            padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
         }
         .pdf-content h3, .pdf-content h4, .pdf-content h5 {
-            font-weight: bold !important;
-            margin-top: 1em !important;
-            color: #000000 !important;
+            font-weight: bold;
+            margin-top: 1em;
+            color: #000000;
         }
         .pdf-content ul {
-            list-style: disc !important;
-            padding-left: 20px !important;
-            margin: 0.5em 0 !important;
+            list-style: disc;
+            padding-left: 15px;
+            margin: 0.5em 0;
         }
         .pdf-content p {
-            margin: 0.5em 0 !important;
-            color: #000000 !important;
+            margin: 0.5em 0;
+            color: #000000;
         }
         .pdf-content li {
-            margin-bottom: 0.3em !important;
+            margin-bottom: 0.3em;
+        }
+        #pdfRenderContainer {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+            width: 8.5in;
+            background-color: #ffffff;
+            padding: 0.5in;
+        }
+        .page-break {
+            page-break-before: always;
         }
     </style>
 </head>
 <body class="bg-gray-100 font-sans">
     <div class="container mx-auto p-6 max-w-4xl">
-        <h1 class="text-3xl font-bold text-center mb-6">index Roadmap Tool</h1>
+        <h1 class="text-3xl font-bold text-center mb-6">Sales Roadmap Tool</h1>
 
         <!-- Instructions -->
         <div class="bg-blue-100 p-4 rounded-lg mb-6">
@@ -123,13 +135,13 @@
                     <p class="text-red-500 text-sm hidden error">Please describe the current infrastructure.</p>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1">Select Products and Services</label>
+                    <label class="block text-sm font-medium mb-1">Select Products and Quantities</label>
                     <div id="productCheckboxes" class="grid grid-cols-1 gap-2">
                         <!-- Fixed Managed Services -->
                         <div class="flex items-center space-x-2">
                             <label class="flex items-center">
                                 <input type="checkbox" name="products" value="Managed Vendors" class="mr-2" onchange="toggleQuantityInput(this)">
-                                Managed Services
+                                Managed Vendors
                             </label>
                             <input type="number" name="quantity_Managed Vendors" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
                         </div>
@@ -209,6 +221,9 @@
             <div id="roadmapContent" class="pdf-content"></div>
             <button onclick="downloadPDF()" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Download as PDF</button>
         </div>
+
+        <!-- Hidden container for PDF rendering -->
+        <div id="pdfRenderContainer" class="pdf-content"></div>
     </div>
 
     <script>
@@ -237,21 +252,17 @@
         function populateProducts() {
             const productList = document.getElementById('productList');
             const productCheckboxes = document.getElementById('productCheckboxes');
-            // Keep fixed Managed Services checkboxes, clear additional ones
             const fixedDivs = Array.from(productCheckboxes.children).slice(0, fixedProducts.length);
             productCheckboxes.innerHTML = '';
             fixedDivs.forEach(div => productCheckboxes.appendChild(div));
 
-            // Populate additional products
             productList.innerHTML = '';
             additionalProducts.forEach((product, index) => {
-                // Product list item
                 const li = document.createElement('li');
                 li.className = 'flex justify-between items-center';
                 li.innerHTML = `<span>${product}</span><button onclick="removeProduct(${index})" class="text-red-500 hover:text-red-700">Remove</button>`;
                 productList.appendChild(li);
 
-                // Product checkbox
                 const div = document.createElement('div');
                 div.className = 'flex items-center space-x-2';
                 div.innerHTML = `
@@ -373,7 +384,7 @@
 
                 roadmap.milestones.forEach((milestone, index) => {
                     roadmapContent += `
-                        <div>
+                        <div class="milestone">
                             <h5>Milestone ${index + 1}: ${milestone.name} (${milestone.timeframe})</h5>
                             <p><strong>What We’ll Deliver:</strong></p>
                             <ul>${milestone.deliverables.map(d => `<li>${d}</li>`).join('')}</ul>
@@ -403,34 +414,83 @@
         });
 
         // Download PDF
-        function downloadPDF() {
-            const element = document.getElementById('roadmapContent');
-            console.log('Preparing to generate PDF with content:', element.innerHTML);
-            
-            if (!element.innerHTML || element.innerHTML.trim() === '') {
+        async function downloadPDF() {
+            const sourceElement = document.getElementById('roadmapContent');
+            console.log('Preparing to generate PDF with content:', sourceElement.innerHTML);
+
+            if (!sourceElement.innerHTML || sourceElement.innerHTML.trim() === '') {
                 console.error('Roadmap content is empty');
                 alert('Cannot generate PDF: Roadmap content is empty. Please generate a roadmap first.');
                 return;
             }
 
-            const opt = {
-                margin: 0.5,
-                filename: 'Roadmap_Strategy.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, logging: true },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
+            // Clone content to hidden container
+            const renderContainer = document.getElementById('pdfRenderContainer');
+            renderContainer.innerHTML = sourceElement.innerHTML;
 
-            // Wait for content to render
-            setTimeout(() => {
-                console.log('Generating PDF...');
-                html2pdf().from(element).set(opt).save().then(() => {
-                    console.log('PDF generation completed');
-                }).catch(err => {
-                    console.error('PDF generation error:', err);
-                    alert('Failed to generate PDF. Please try again or check the console for errors.');
+            // Add page breaks for long content
+            const milestones = renderContainer.querySelectorAll('.milestone');
+            milestones.forEach((milestone, index) => {
+                if (index > 0) {
+                    milestone.classList.add('page-break');
+                }
+            });
+
+            console.log('Rendering content for PDF...');
+            try {
+                const canvas = await html2canvas(renderContainer, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: true,
+                    backgroundColor: '#ffffff'
                 });
-            }, 1000); // Increased delay to ensure rendering
+                console.log('Canvas generated:', canvas);
+
+                // Debug: Append canvas to DOM to verify rendering
+                const debugImg = document.createElement('img');
+                debugImg.src = canvas.toDataURL('image/png');
+                debugImg.style.maxWidth = '100%';
+                document.body.appendChild(debugImg);
+                console.log('Debug image appended to DOM');
+
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'in',
+                    format: 'letter'
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.98);
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfWidth = pdf.internal.pageSize.getWidth() - 1; // 0.5in margin
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                let position = 0.5; // Start at 0.5in margin
+                let remainingHeight = pdfHeight;
+                const pageHeight = pdf.internal.pageSize.getHeight() - 1;
+
+                while (remainingHeight > 0) {
+                    const heightToAdd = Math.min(remainingHeight, pageHeight);
+                    pdf.addImage(imgData, 'JPEG', 0.5, position, pdfWidth, heightToAdd);
+                    remainingHeight -= heightToAdd;
+                    if (remainingHeight > 0) {
+                        pdf.addPage();
+                        position = 0.5 - (heightToAdd * (pdfWidth / imgProps.width));
+                    }
+                }
+
+                console.log('Generating PDF...');
+                pdf.save('Roadmap_Strategy.pdf');
+                console.log('PDF generation completed');
+
+                // Clean up debug image
+                document.body.removeChild(debugImg);
+                renderContainer.innerHTML = '';
+            } catch (err) {
+                console.error('PDF generation error:', err);
+                alert('Failed to generate PDF. Please check the console for errors or try a different browser.');
+                renderContainer.innerHTML = '';
+            }
         }
 
         // Initialize products
