@@ -1,5 +1,28 @@
 const fetch = require('node-fetch');
 
+// Simple JSON repair function to fix truncated JSON
+function repairJson(jsonString) {
+  try {
+    return JSON.parse(jsonString);
+  } catch (e) {
+    // Fix common truncation issues
+    let repaired = jsonString.trim();
+    // Ensure JSON ends with closing braces
+    if (!repaired.endsWith('}')) {
+      repaired = repaired.substring(0, repaired.lastIndexOf(',') + 1) + '}';
+    }
+    // Add missing closing array if needed
+    if (repaired.includes('"milestones":[') && !repaired.includes(']')) {
+      repaired = repaired.substring(0, repaired.lastIndexOf('{')) + ']}';
+    }
+    try {
+      return JSON.parse(repaired);
+    } catch (err) {
+      throw new Error(`Failed to repair JSON: ${err.message}`);
+    }
+  }
+}
+
 exports.handler = async function(event, context) {
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -48,7 +71,7 @@ exports.handler = async function(event, context) {
       - Products and Quantities: ${products.map(p => `${p.product} (${p.quantity} units)`).join(', ')}
 
       Return JSON.stringify({
-        milestones: [{ name: string, timeframe: string, deliverables: [], approach: string, risks: [], kpis: [] }, ...],
+        milestones: [{ name: string, timeframe: string, deliverables: string[], approach: string, risks: string[], kpis: string[] }, ...],
         nextSteps: string
       }).
     `;
@@ -81,7 +104,7 @@ exports.handler = async function(event, context) {
           model: 'grok-3',
           stream: false,
           temperature: 0,
-          max_tokens: 500
+          max_tokens: 800
         }),
         signal: controller.signal
       });
@@ -99,7 +122,7 @@ exports.handler = async function(event, context) {
       console.log('Raw Grok API response:', apiResponse);
 
       try {
-        roadmap = JSON.parse(apiResponse.choices[0].message.content);
+        roadmap = repairJson(apiResponse.choices[0].message.content);
         console.log('Parsed roadmap:', roadmap);
       } catch (e) {
         console.error('API response content:', apiResponse.choices[0].message.content);
