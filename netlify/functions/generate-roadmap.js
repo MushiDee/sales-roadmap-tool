@@ -5,13 +5,10 @@ function repairJson(jsonString) {
   try {
     return JSON.parse(jsonString);
   } catch (e) {
-    // Fix common truncation issues
     let repaired = jsonString.trim();
-    // Ensure JSON ends with closing braces
     if (!repaired.endsWith('}')) {
       repaired = repaired.substring(0, repaired.lastIndexOf(',') + 1) + '}';
     }
-    // Add missing closing array if needed
     if (repaired.includes('"milestones":[') && !repaired.includes(']')) {
       repaired = repaired.substring(0, repaired.lastIndexOf('{')) + ']}';
     }
@@ -55,20 +52,20 @@ exports.handler = async function(event, context) {
     }
 
     const prompt = `
-      You are an expert IT consultant. Generate a 12-month IT roadmap with three milestones based on the following client information. Each milestone should include:
+      Generate a 12-month IT roadmap with three milestones for the client below. Each milestone needs:
       - Name and timeframe (e.g., Months 1-4)
-      - Deliverables: 3-5 specific outcomes
-      - Approach: Non-technical explanation of how the work will be done
-      - Risks: 2-3 potential challenges
-      - KPIs: 3-5 measurable success metrics
-      Also provide next steps for the client. The roadmap should be clear, professional, and non-technical.
+      - 3-5 deliverables
+      - Non-technical approach explanation
+      - 2-3 risks
+      - 3-5 KPIs
+      Include next steps. Keep it clear and professional.
 
-      Client Information:
-      - Client Name: ${clientName}
+      Client:
+      - Name: ${clientName}
       - IT Challenges: ${itChallenges}
       - Business Goals: ${businessGoals}
-      - Current Infrastructure: ${currentInfra}
-      - Products and Quantities: ${products.map(p => `${p.product} (${p.quantity} units)`).join(', ')}
+      - Infrastructure: ${currentInfra}
+      - Products: ${products.map(p => `${p.product} (${p.quantity} units)`).join(', ')}
 
       Return JSON.stringify({
         milestones: [{ name: string, timeframe: string, deliverables: string[], approach: string, risks: string[], kpis: string[] }, ...],
@@ -80,7 +77,7 @@ exports.handler = async function(event, context) {
 
     // Set a timeout for the fetch request
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 9000); // 9-second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 9500); // 9.5-second timeout
 
     let roadmap;
     try {
@@ -94,7 +91,7 @@ exports.handler = async function(event, context) {
           messages: [
             {
               role: 'system',
-              content: 'You are Grok, a highly intelligent, helpful AI assistant.'
+              content: 'You are Grok, a helpful AI assistant.'
             },
             {
               role: 'user',
@@ -104,7 +101,7 @@ exports.handler = async function(event, context) {
           model: 'grok-3',
           stream: false,
           temperature: 0,
-          max_tokens: 800
+          max_tokens: 600
         }),
         signal: controller.signal
       });
@@ -135,15 +132,15 @@ exports.handler = async function(event, context) {
         roadmap = {
           milestones: [
             {
-              name: 'Initial Assessment',
+              name: 'Initial Setup',
               timeframe: 'Months 1-4',
-              deliverables: ['Basic IT assessment'],
-              approach: 'Conduct a review of current systems.',
-              risks: ['Potential delays due to data access'],
-              kpis: ['Assessment completed within 4 weeks']
+              deliverables: ['Assess current IT systems', 'Plan initial product deployment'],
+              approach: 'Review your infrastructure and selected products to create a deployment plan.',
+              risks: ['Delays due to slow API response', 'Incomplete data access'],
+              kpis: ['Complete assessment in 6 weeks', 'Plan approved by Month 2']
             }
           ],
-          nextSteps: 'Contact support to finalize the roadmap due to API timeout.'
+          nextSteps: 'Schedule a meeting to discuss initial setup, as the AI roadmap generation timed out. Contact support for assistance.'
         };
       } else {
         throw error;
