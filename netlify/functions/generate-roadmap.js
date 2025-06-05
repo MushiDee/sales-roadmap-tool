@@ -10,7 +10,6 @@ exports.handler = async function(event, context) {
   };
 
   if (event.httpMethod === 'OPTIONS') {
-    console.log('Handling OPTIONS request');
     return {
       statusCode: 200,
       headers: corsHeaders,
@@ -19,11 +18,10 @@ exports.handler = async function(event, context) {
   }
 
   if (event.httpMethod !== 'POST') {
-    console.log('Invalid method:', event.httpMethod);
     return {
       statusCode: 405,
       headers: corsHeaders,
-      body: 'Method Not Allowed'
+      body: JSON.stringify({ error: 'Method Not Allowed' })
     };
   }
 
@@ -32,28 +30,26 @@ exports.handler = async function(event, context) {
     const { clientName, itChallenges, businessGoals, currentInfra, products } = data;
 
     if (!clientName || !itChallenges || !businessGoals || !currentInfra || !products || !Array.isArray(products)) {
-      console.log('Invalid input data:', data);
       throw new Error('Invalid input data');
     }
 
     // Construct refined prompt
     const prompt = `
-      You are an expert IT consultant for a managed services provider specializing in IT support and Microsoft Cloud services. Create a 12-month IT roadmap with three milestones tailored to the client's needs, infrastructure, and selected products. PRIORITIZE and MANDATORILY include for each product in each milestone:
-      - A project plan with 3-5 specific tasks (e.g., discovery, configuration, training), their timelines (e.g., Week 1-2), effort hours (e.g., 10 hours), and dependencies (e.g., licensing/hardware costs excluded).
+      You are an expert IT consultant for a managed services provider specializing in IT support and Microsoft Cloud services. Create a 12-month IT roadmap with three milestones tailored to the client's needs, infrastructure, and selected products. For each product in each milestone, you MUST include:
+      - A project plan with exactly 3 tasks (e.g., discovery, configuration, training), each with a timeline (e.g., Week 1-2), effort hours (e.g., 10 hours), associated product, and dependencies (e.g., licensing/hardware costs excluded).
       - A summary table listing each task, its hours, and associated product.
-      Additionally, include:
-      - Specific response points detailing:
+      - Response points detailing:
         - How the product addresses the client's IT challenges.
         - Its contribution to the client's business goals.
         - A deliverable tied to the product's quantity.
-      - Industry best practice guidelines for deploying and running each product (e.g., ITIL 4, NIST, Microsoft Zero Trust).
+      - One industry best practice guideline for deploying and running the product (e.g., ITIL 4, NIST, Microsoft Zero Trust).
       Each milestone must include:
       - A unique name and timeframe (e.g., Months 1-4).
-      - 3-5 deliverables, each referencing a product, its quantity, and any licensing/hardware exclusions.
-      - An approach in clear, non-technical language, linking product response points to challenges and goals.
-      - 2-3 risks specific to the infrastructure or product deployment, including licensing/hardware risks.
-      - 3-5 measurable KPIs tailored to the client's scale (e.g., number of servers) and product outcomes (e.g., "95% ticket resolution within 1 hour").
-      For Managed remote Helpdesk, specify whether the default 8/5 service (8 hours/day, 5 days/week) or optional 24/7 add-on is assumed, based on client challenges (e.g., use 24/7 for critical systems). Provide next steps that are actionable, specific, include a timeline (e.g., within 2 weeks), reference actions for each product (e.g., "Procure M365 licenses"), and clarify 8/5 vs. 24/7 for Managed remote Helpdesk. Use exact product names to avoid misspellings. The roadmap must be professional, client-centric, and jargon-free.
+      - 3 deliverables, each referencing a product, its quantity, and any licensing/hardware exclusions.
+      - An approach in clear, non-technical language, linking response points to challenges and goals.
+      - 2 risks specific to the infrastructure or product deployment, including licensing/hardware risks.
+      - 3 measurable KPIs tailored to the client's scale and product outcomes (e.g., "95% ticket resolution within 1 hour").
+      For Managed remote Helpdesk, specify whether the default 8/5 service (8 hours/day, 5 days/week) or optional 24/7 add-on is assumed, based on client challenges (e.g., 24/7 for critical systems). Provide next steps that are actionable, specific, include a timeline (e.g., within 2 weeks), reference actions for each product (e.g., "Procure M365 licenses"), and clarify 8/5 vs. 24/7 for Managed remote Helpdesk. Use exact product names to avoid misspellings. The roadmap must be professional, client-centric, and jargon-free.
 
       Service Context:
       - Managed Vendors: Coordinates third-party vendor services (e.g., hardware, software) with quarterly reviews. No licensing or hardware costs included; managed via vendor agreements.
@@ -81,16 +77,18 @@ exports.handler = async function(event, context) {
         "deliverables": ["Deploy 100 units of Managed remote Helpdesk (24/7), ticketing software license excluded"],
         "approach": "Implement rapid-response support to reduce outages using Managed remote Helpdesk.",
         "risks": ["Delays in procuring ticketing software license", "Staff training gaps"],
-        "kpis": ["95% ticket resolution within 1 hour", "99.5% server uptime"],
+        "kpis": ["95% ticket resolution within 1 hour", "99.5% server uptime", "100% VPN uptime for remote access"],
         "productsUsed": ["Managed remote Helpdesk"],
         "projectPlan": [
           {"task": "Install ticketing system", "timeline": "Week 1-2", "effortHours": 20, "product": "Managed remote Helpdesk", "dependencies": "Ticketing software license excluded"},
-          {"task": "Train 100 users", "timeline": "Week 3-4", "effortHours": 40, "product": "Managed remote Helpdesk", "dependencies": "None"}
+          {"task": "Train 100 users", "timeline": "Week 3-4", "effortHours": 40, "product": "Managed remote Helpdesk", "dependencies": "None"},
+          {"task": "Configure SLAs", "timeline": "Week 2-3", "effortHours": 15, "product": "Managed remote Helpdesk", "dependencies": "None"}
         ],
         "bestPractices": [{"product": "Managed remote Helpdesk", "guideline": "Follow ITIL 4 for incident management"}],
         "summaryTable": [
           {"task": "Install ticketing system", "hours": 20, "product": "Managed remote Helpdesk"},
-          {"task": "Train 100 users", "hours": 40, "product": "Managed remote Helpdesk"}
+          {"task": "Train 100 users", "hours": 40, "product": "Managed remote Helpdesk"},
+          {"task": "Configure SLAs", "hours": 15, "product": "Managed remote Helpdesk"}
         ]
       }
 
@@ -112,14 +110,14 @@ exports.handler = async function(event, context) {
           { role: 'system', content: 'You are an expert IT consultant.' },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 4000,
+        max_tokens: 5000,
         temperature: 0.7
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Grok API request failed:', response.status, errorText);
+      console.error('Grok API request failed:', response.status, errorText, { headers: response.headers });
       return {
         statusCode: response.status,
         headers: corsHeaders,
@@ -137,6 +135,9 @@ exports.handler = async function(event, context) {
       }
       roadmap = JSON.parse(apiResponse.choices[0].message.content);
       console.log('Parsed roadmap:', JSON.stringify(roadmap, null, 2));
+      // Log specific fields for debugging
+      console.log('Project plans included:', roadmap.milestones.every(m => m.projectPlan && Array.isArray(m.projectPlan) && m.projectPlan.length > 0));
+      console.log('Summary tables included:', roadmap.milestones.every(m => m.summaryTable && Array.isArray(m.summaryTable) && m.summaryTable.length > 0));
     } catch (e) {
       console.error('Invalid JSON response:', apiResponse.choices?.[0]?.message?.content || apiResponse);
       // Fallback roadmap
@@ -204,7 +205,6 @@ exports.handler = async function(event, context) {
       }))
     }));
 
-    console.log('Final roadmap response:', JSON.stringify(roadmap, null, 2));
     return {
       statusCode: 200,
       headers: corsHeaders,
