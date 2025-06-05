@@ -5,7 +5,7 @@ exports.handler = async function(event, context) {
     return {
       statusCode: 200,
       headers: {
-        'Access-Control-Allow-Origin': 'https://MushiDee.github.io',
+        'Access-Control-Allow-Origin': 'https://mushiDee.github.io',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type'
       },
@@ -16,7 +16,7 @@ exports.handler = async function(event, context) {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      headers: { 'Access-Control-Allow-Origin': 'https://MushiDee.github.io' },
+      headers: { 'Access-Control-Allow-Origin': 'https://mushiDee.github.io' },
       body: 'Method Not Allowed'
     };
   }
@@ -78,14 +78,14 @@ exports.handler = async function(event, context) {
 
     return {
       statusCode: 200,
-      headers: { 'Access-Control-Allow-Origin': 'https://MushiDee.github.io' },
+      headers: { 'Access-Control-Allow-Origin': 'https://mushiDee.github.io' },
       body: JSON.stringify({ roadmap })
     };
   } catch (error) {
     console.error('Error:', error);
     return {
       statusCode: 500,
-      headers: { 'Access-Control-Allow-Origin': 'https://MushiDee.github.io' },
+      headers: { 'Access-Control-Allow-Origin': 'https://mushiDee.github.io' },
       body: JSON.stringify({ error: 'Failed to generate roadmap' })
     };
   }
