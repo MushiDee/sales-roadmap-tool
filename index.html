@@ -111,7 +111,7 @@
                 </div>
                 <div class="mb-4">
                     <label class="block text-sm font-medium mb-1">Business Goals for Next 12 Months</label>
-                    <textarea name="businessGoals" class="w-full p-2 border rounded" rowsگذ-4="true" required></textarea>
+                    <textarea name="businessGoals" class="w-full p-2 border rounded" rows="4" required></textarea>
                     <p class="text-red-500 text-sm hidden error">Please describe the business goals.</p>
                 </div>
                 <div class="mb-4">
@@ -125,63 +125,63 @@
                         <!-- Fixed Managed Services -->
                         <div class="flex items-center space-x-2">
                             <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Vendors" class="mr-1" onchange="toggleQuantityInput(this)">
+                                <input type="checkbox" name="products" value="Managed Vendors" class="mr-2" onchange="toggleQuantityInput(this)">
                                 Managed Vendors
                             </label>
                             <input type="number" name="quantity_Managed Vendors" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
                         </div>
                         <div class="flex items-center space-x-2">
                             <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed remote Helpdesk" class="mr-1" onchange="toggleQuantityInput(this)">
+                                <input type="checkbox" name="products" value="Managed remote Helpdesk" class="mr-2" onchange="toggleQuantityInput(this)">
                                 Managed remote Helpdesk
                             </label>
                             <input type="number" name="quantity_Managed remote Helpdesk" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
                         </div>
                         <div class="flex items-center space-x-2">
                             <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Onsite Support technician (in hours)" class="mr-1" onchange="toggleQuantityInput(this)">
+                                <input type="checkbox" name="products" value="Managed Onsite Support technician (in hours)" class="mr-2" onchange="toggleQuantityInput(this)">
                                 Managed Onsite Support technician (in hours)
                             </label>
                             <input type="number" name="quantity_Managed Onsite Support technician (in hours)" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
                         </div>
                         <div class="flex items-center space-x-2">
                             <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed M365 instance" class="mr-1" onchange="toggleQuantityInput(this)">
+                                <input type="checkbox" name="products" value="Managed M365 instance" class="mr-2" onchange="toggleQuantityInput(this)">
                                 Managed M365 instance
                             </label>
                             <input type="number" name="quantity_Managed M365 instance" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
                         </div>
                         <div class="flex items-center space-x-2">
                             <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Local Area network service" class="mr-1" onchange="toggleQuantityInput(this)">
-                                Managed Local Area Network service
+                                <input type="checkbox" name="products" value="Managed Local Area network service" class="mr-2" onchange="toggleQuantityInput(this)">
+                                Managed Local Area network service
                             </label>
-                            <input type="number" name="quantity_Managed Local Area Network service" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed Local Area network service" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
                         </div>
                         <div class="flex items-center space-x-2">
                             <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Servers" class="mr-1" onchange="toggleQuantityInput(this)">
+                                <input type="checkbox" name="products" value="Managed Servers" class="mr-2" onchange="toggleQuantityInput(this)">
                                 Managed Servers
                             </label>
                             <input type="number" name="quantity_Managed Servers" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
                         </div>
                         <div class="flex items-center space-x-2">
                             <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Firewalls" class="mr-1" onchange="toggleQuantityInput(this)">
+                                <input type="checkbox" name="products" value="Managed Firewalls" class="mr-2" onchange="toggleQuantityInput(this)">
                                 Managed Firewalls
                             </label>
                             <input type="number" name="quantity_Managed Firewalls" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
                         </div>
                         <div class="flex items-center space-x-2">
                             <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Azure IaaS service" class="mr-1" onchange="toggleQuantityInput(this)">
+                                <input type="checkbox" name="products" value="Managed Azure IaaS service" class="mr-2" onchange="toggleQuantityInput(this)">
                                 Managed Azure IaaS service
                             </label>
                             <input type="number" name="quantity_Managed Azure IaaS service" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
                         </div>
                         <div class="flex items-center space-x-2">
                             <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Cybersecurity & SOC service" class="mr-1" onchange="toggleQuantityInput(this)">
+                                <input type="checkbox" name="products" value="Managed Cybersecurity & SOC service" class="mr-2" onchange="toggleQuantityInput(this)">
                                 Managed Cybersecurity & SOC service
                             </label>
                             <input type="number" name="quantity_Managed Cybersecurity & SOC service" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
@@ -192,7 +192,7 @@
                 </div>
                 <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center">
                     <span>Generate Roadmap</span>
-                    <svg id="loadingSpinner" class="animate-spin h-5 w-5 ml-2 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 24">
+                    <svg id="loadingSpinner" class="animate-spin h-5 w-5 ml-2 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                     </svg>
@@ -215,7 +215,7 @@
             "Managed remote Helpdesk",
             "Managed Onsite Support technician (in hours)",
             "Managed M365 instance",
-            "Managed Local Area Network service",
+            "Managed Local Area network service",
             "Managed Servers",
             "Managed Firewalls",
             "Managed Azure IaaS service",
@@ -251,7 +251,7 @@
                 div.className = 'flex items-center space-x-2';
                 div.innerHTML = `
                     <label class="flex items-center">
-                        <input type="checkbox" name="products" value="${product}" class="mr-1" onchange="toggleQuantityInput(this)">
+                        <input type="checkbox" name="products" value="${product}" class="mr-2" onchange="toggleQuantityInput(this)">
                         ${product}
                     </label>
                     <input type="number" name="quantity_${product}" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
@@ -374,6 +374,7 @@
                     roadmapContent += `
                         <div>
                             <h5>Milestone ${index + 1}: ${milestone.name} (${milestone.timeframe})</h5>
+                            <p><strong>Products Utilized:</strong> ${milestone.productsUsed.join(', ')}</p>
                             <p><strong>What We’ll Deliver:</strong></p>
                             <ul>${milestone.deliverables.map(d => `<li>${d}</li>`).join('')}</ul>
                             <p><strong>How We’ll Do It:</strong> ${milestone.approach}</p>
