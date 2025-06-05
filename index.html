@@ -44,7 +44,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Roadmap Tool - JEC Technologies (Pty) Ltd</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://unpkg.com/html-docx-js-typescript@0.1.7/dist/html-docx.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html-docx-js-typescript@0.1.7/dist/html-docx.js"></script>
     <style>
         body {
             font-family: Calibri, sans-serif;
@@ -465,8 +465,8 @@
                 const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
                 let roadmapContent = `
                     <div class="cover-page">
-                        <!-- Replace with your JEC Technologies logo URL or Base64 -->
-                        <img src="./images/200x50.png?text=JEC+Technologies+Logo" alt="JEC Technologies Logo" style="max-width: 200px;">
+                        <!-- Use the raw GitHub URL for the logo -->
+                        <img src="https://raw.githubusercontent.com/MushiDee/sales-roadmap-tool/main/images/logo.png" alt="JEC Technologies Logo" style="max-width: 200px;" onerror="this.src='https://via.placeholder.com/200x50.png?text=JEC+Technologies+Logo';">
                         <h1 style="font-size: 24pt;">IT Roadmap and Strategy</h1>
                         <p style="font-size: 14pt;">Prepared for ${data.clientName}</p>
                         <p>Prepared by: JEC Technologies (Pty) Ltd</p>
@@ -610,7 +610,7 @@
                         console.log('PDF generated successfully');
                     }).catch(err => {
                         console.error('PDF generation error:', err);
-                        alert('Failed to generate PDF. Please try again.');
+                        alert('Failed to generate PDF due to rendering issues. Please ensure all images load correctly or try again.');
                     });
                 }, 1500);
             } catch (err) {
@@ -676,7 +676,7 @@
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(url);
                     console.log('Word document generated successfully');
-                }, 500);
+                }, 1000);
             } catch (err) {
                 console.error('Word generation error:', err);
                 alert('Failed to generate Word document. Please try again.');
