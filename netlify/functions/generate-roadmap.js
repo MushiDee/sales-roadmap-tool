@@ -2,17 +2,15 @@ const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
   const corsOrigin = 'https://mushidee.github.io';
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Vary': 'Origin'
-  };
 
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: corsHeaders,
+      headers: {
+        'Access-Control-Allow-Origin': corsOrigin,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      },
       body: ''
     };
   }
@@ -20,7 +18,7 @@ exports.handler = async function(event, context) {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      headers: corsHeaders,
+      headers: { 'Access-Control-Allow-Origin': corsOrigin },
       body: 'Method Not Allowed'
     };
   }
@@ -115,12 +113,7 @@ exports.handler = async function(event, context) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Grok API request failed:', response.status, errorText);
-      return {
-        statusCode: response.status,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: `Grok API request failed: ${errorText}` })
-      };
+      throw new Error(`Grok API request failed: ${response.status} - ${errorText}`);
     }
 
     const apiResponse = await response.json();
@@ -170,12 +163,7 @@ exports.handler = async function(event, context) {
 
     // Validate roadmap structure
     if (!roadmap.milestones || !Array.isArray(roadmap.milestones) || !roadmap.nextSteps) {
-      console.error('Invalid roadmap structure:', JSON.stringify(roadmap, null, 2));
-      return {
-        statusCode: 500,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: 'Invalid roadmap structure from API' })
-      };
+      throw new Error('Invalid roadmap structure from API');
     }
 
     // Ensure required fields
@@ -202,14 +190,14 @@ exports.handler = async function(event, context) {
 
     return {
       statusCode: 200,
-      headers: corsHeaders,
+      headers: { 'Access-Control-Allow-Origin': corsOrigin },
       body: JSON.stringify({ roadmap })
     };
   } catch (error) {
     console.error('Error:', error.message, error.stack);
     return {
       statusCode: 500,
-      headers: corsHeaders,
+      headers: { 'Access-Control-Allow-Origin': corsOrigin },
       body: JSON.stringify({ error: `Failed to generate roadmap: ${error.message}` })
     };
   }
