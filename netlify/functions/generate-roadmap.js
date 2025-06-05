@@ -39,45 +39,33 @@ exports.handler = async function(event, context) {
       throw new Error('Invalid input data');
     }
 
-    console.log('Constructing simplified prompt');
+    console.log('Constructing minimal prompt');
     const prompt = `
-      You are an expert IT consultant. Create a 1-month IT roadmap with one milestone for the client ${clientName}. For each product, include:
-      - A project plan with 1 task (e.g., setup), timeline (Week 1), effort hours (e.g., 5 hours), product, and dependencies (e.g., licensing excluded).
+      Create a 1-month IT roadmap for ${clientName} with one milestone. For each product, include:
+      - A project plan with 1 task (e.g., setup), timeline (Week 1), effort hours (5 hours), product, and dependencies.
       - A summary table with the task, hours, and product.
       - One deliverable tied to the product's quantity.
-      - One best practice guideline (e.g., ITIL 4).
       The milestone must include:
       - Name: "Initial Setup"
-      - Timeframe: "Weeks 1-2"
+      - Timeframe: "Week 1"
       - 1 deliverable per product
-      - Approach in non-technical language
-      - 1 risk
-      - 1 KPI (e.g., "90% uptime")
-      For Managed remote Helpdesk, assume 8/5 service. Provide one next step with a 1-week timeline. Use exact product names.
+      - Approach: "Begin setup to address ${itChallenges}."
+      - 1 risk: "Setup delays"
+      - 1 KPI: "Complete setup in 1 week"
+      For Managed remote Helpdesk, assume 8/5 service. Provide one next step: "Review setup with ${clientName} in 1 week." Use exact product names.
 
-      Service Context:
-      - Managed remote Helpdesk: 8/5 IT support, ticketing software license excluded.
-      - Managed Onsite Support technician (in hours): Hourly on-site support, no licensing costs.
-      - Managed Servers: Manages servers, hardware/OS licenses excluded.
-
-      Client Information:
-      - Name: ${clientName}
-      - Challenges: ${itChallenges}
-      - Goals: ${businessGoals}
-      - Infrastructure: ${currentInfra}
-      - Products: ${products.map(p => `${p.product} (${p.quantity} units)`).join(', ')}
+      Products: ${products.map(p => `${p.product} (${p.quantity} units)`).join(', ')}
 
       Example Milestone:
       {
         "name": "Initial Setup",
-        "timeframe": "Weeks 1-2",
-        "deliverables": ["Deploy 10 units of Managed remote Helpdesk (8/5)"],
-        "approach": "Set up support to reduce outages.",
-        "risks": ["License delay"],
-        "kpis": ["90% uptime"],
+        "timeframe": "Week 1",
+        "deliverables": ["Deploy 10 units of Managed remote Helpdesk"],
+        "approach": "Begin setup to address outages.",
+        "risks": ["Setup delays"],
+        "kpis": ["Complete setup in 1 week"],
         "productsUsed": ["Managed remote Helpdesk"],
         "projectPlan": [{"task": "Setup", "timeline": "Week 1", "effortHours": 5, "product": "Managed remote Helpdesk", "dependencies": "License excluded"}],
-        "bestPractices": [{"product": "Managed remote Helpdesk", "guideline": "ITIL 4"}],
         "summaryTable": [{"task": "Setup", "hours": 5, "product": "Managed remote Helpdesk"}]
       }
 
@@ -88,64 +76,35 @@ exports.handler = async function(event, context) {
 
     console.log('Calling xAI Grok API');
     const startTime = Date.now();
-    const response = await fetch('https://api.x.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + (process.env.GROK_API_KEY || ''),
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'grok-3',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 2000,
-        temperature: 0.7
-      }),
-      timeout: 6000 // 6-second timeout
-    }).catch(err => {
-      console.error('API fetch error:', err.message, { duration: Date.now() - startTime });
-      throw err;
-    });
-
-    console.log(`API response status: ${response.status}, duration: ${Date.now() - startTime} ms`);
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API request failed:', response.status, errorText);
-      return {
-        statusCode: 500,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: `API request failed: ${errorText}` })
-      };
-    }
-
-    const apiResponse = await response.json();
-    console.log('Raw Grok API response length:', JSON.stringify(apiResponse).length);
-
-    let roadmap;
+    let apiResponse;
     try {
-      console.log('Parsing API response');
-      if (!apiResponse.choices || !apiResponse.choices[0]?.message?.content) {
-        throw new Error('No valid content in API response');
-      }
-      roadmap = JSON.parse(apiResponse.choices[0].message.content);
-      console.log('Parsed roadmap objects:', roadmap.milestones?.length || 0);
-      if (!roadmap.milestones.every(m => m.projectPlan && Array.isArray(m.projectPlan) && m.projectPlan.length >= products.length && m.summaryTable && Array.isArray(m.summaryTable) && m.summaryTable.length >= products.length)) {
-        console.error('Missing projectPlan or summaryTable');
-        throw new Error('Missing or incomplete projectPlan or summaryTable');
-      }
-      console.log('Project plans included:', roadmap.milestones.every(m => m.projectPlan?.length > 0));
-      console.log('Summary tables included:', roadmap.milestones.every(m => m.summaryTable?.length > 0));
-    } catch (e) {
-      console.error('Invalid JSON or incomplete response:', apiResponse.choices?.[0]?.message?.content || '', e.message);
-      // Fallback roadmap
-      roadmap = {
+      apiResponse = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + (process.env.GROK_API_KEY || ''),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'grok-3',
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 1000,
+          temperature: 0.7
+        }),
+        timeout: 5000 // 5-second timeout
+      });
+    } catch (err) {
+      console.error('API fetch error:', err.message, { duration: Date.now() - startTime });
+      // Immediate fallback on timeout
+      console.log('Using fallback roadmap due to API timeout');
+      const fallbackRoadmap = {
         milestones: [
           {
-            name: "Fallback Milestone",
-            timeframe: "Weeks 1-2",
-            deliverables: [`Basic setup for ${products.map(p => p.product).join(', ')}`],
-            approach: `Initiate setup to address ${itChallenges}.`,
-            risks: ['API timeout'],
-            kpis: ['Complete setup in 2 weeks'],
+            name: "Initial Setup",
+            timeframe: "Week 1",
+            deliverables: products.map(p => `Deploy ${p.quantity} units of ${p.product}`),
+            approach: `Begin setup to address ${itChallenges}.`,
+            risks: ['Setup delays'],
+            kpis: ['Complete setup in 1 week'],
             productsUsed: products.map(p => p.product),
             projectPlan: products.map(p => ({
               task: `Setup ${p.product}`,
@@ -154,9 +113,69 @@ exports.handler = async function(event, context) {
               product: p.product,
               dependencies: p.product.includes('Helpdesk') || p.product.includes('Servers') ? 'Licensing/hardware excluded' : 'None'
             })),
-            bestPractices: products.map(p => ({
+            summaryTable: products.map(p => ({
+              task: `Setup ${p.product}`,
+              hours: 5,
+              product: p.product
+            }))
+          }
+        ],
+        nextSteps: `Review setup with ${clientName} in 1 week.`
+      };
+      return {
+        statusCode: 200,
+        headers: corsHeaders,
+        body: JSON.stringify({ roadmap: fallbackRoadmap })
+      };
+    }
+
+    console.log(`API response status: ${apiResponse.status}, duration: ${Date.now() - startTime} ms`);
+    if (!apiResponse.ok) {
+      const errorText = await apiResponse.text();
+      console.error('API request failed:', apiResponse.status, errorText);
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: `API request failed: ${errorText}` })
+      };
+    }
+
+    const apiResponseData = await apiResponse.json();
+    console.log('Raw Grok API response length:', JSON.stringify(apiResponseData).length);
+
+    let roadmap;
+    try {
+      console.log('Parsing API response');
+      if (!apiResponseData.choices || !apiResponseData.choices[0]?.message?.content) {
+        throw new Error('No valid content in API response');
+      }
+      roadmap = JSON.parse(apiResponseData.choices[0].message.content);
+      console.log('Parsed roadmap objects:', roadmap.milestones?.length || 0);
+      if (!roadmap.milestones.every(m => m.projectPlan && Array.isArray(m.projectPlan) && m.projectPlan.length >= products.length && m.summaryTable && Array.isArray(m.summaryTable) && m.summaryTable.length >= products.length)) {
+        console.error('Missing projectPlan or summaryTable');
+        throw new Error('Missing or incomplete projectPlan or summaryTable');
+      }
+      console.log('Project plans included:', roadmap.milestones.every(m => m.projectPlan?.length > 0));
+      console.log('Summary tables included:', roadmap.milestones.every(m => m.summaryTable?.length > 0));
+    } catch (e) {
+      console.error('Invalid JSON or incomplete response:', apiResponseData.choices?.[0]?.message?.content || '', e.message);
+      // Fallback roadmap
+      roadmap = {
+        milestones: [
+          {
+            name: "Initial Setup",
+            timeframe: "Week 1",
+            deliverables: products.map(p => `Deploy ${p.quantity} units of ${p.product}`),
+            approach: `Begin setup to address ${itChallenges}.`,
+            risks: ['Setup delays'],
+            kpis: ['Complete setup in 1 week'],
+            productsUsed: products.map(p => p.product),
+            projectPlan: products.map(p => ({
+              task: `Setup ${p.product}`,
+              timeline: "Week 1",
+              effortHours: 5,
               product: p.product,
-              guideline: `Follow industry standards for ${p.product}`
+              dependencies: p.product.includes('Helpdesk') || p.product.includes('Servers') ? 'Licensing/hardware excluded' : 'None'
             })),
             summaryTable: products.map(p => ({
               task: `Setup ${p.product}`,
@@ -165,7 +184,7 @@ exports.handler = async function(event, context) {
             }))
           }
         ],
-        nextSteps: `Schedule setup review with ${clientName} within 1 week.`
+        nextSteps: `Review setup with ${clientName} in 1 week.`
       };
     }
 
