@@ -11,7 +11,7 @@
                 var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
                 var firstSheetName = workbook.SheetNames[0];
                 var worksheet = workbook.Sheets[firstSheetName];
-// Temporary comment >>
+
                 // Convert sheet to JSON to filter blank rows
                 var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
                 // Filter out blank rows (rows where all cells are empty, null, or undefined)
@@ -43,186 +43,281 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Roadmap Tool</title>
-    <link rel="stylesheet" href="tailwind.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-docx-js/0.3.1/html-docx.min.js"></script>
     <style>
-        .pdf-content {
-            font-family: Arial, sans-serif;
-            font-size: 10pt;
+        body {
+            font-family: Calibri, sans-serif;
+            font-size: 11pt;
             color: #000;
-            line-height: 1.3;
-            width: 7.5in;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-section, .preview-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .doc-content {
+            width: 100%;
+            max-width: 8.5in;
             padding: 0.5in;
             box-sizing: border-box;
+            font-family: Calibri, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
         }
-        .pdf-content h3, .pdf-content h4, .pdf-content h5 {
+        .cover-page {
+            text-align: center;
+            margin-bottom: 40px;
+            page-break-after: always;
+        }
+        .cover-page img {
+            max-width: 200px;
+            margin-bottom: 20px;
+        }
+        .cover-page h1 {
+            font-size: 24pt;
+            color: #003087;
+            margin: 10px 0;
+        }
+        .cover-page p {
+            font-size: 11pt;
+            margin: 5px 0;
+            color: #333;
+        }
+        .toc {
+            margin-bottom: 40px;
+            page-break-after: always;
+        }
+        .toc h2 {
+            font-size: 14pt;
+            color: #003087;
+            margin-bottom: 10px;
+        }
+        .toc ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .toc li {
+            margin: 5px 0;
+            font-size: 11pt;
+        }
+        .toc li a {
+            text-decoration: none;
+            color: #000;
+        }
+        h2, h3, h4, h5 {
             font-weight: bold;
-            margin: 0.3em 0;
+            color: #003087;
+            margin: 10px 0;
         }
-        .pdf-content ul {
+        h2 { font-size: 14pt; }
+        h3 { font-size: 12pt; }
+        h4 { font-size: 11pt; }
+        h5 { font-size: 10pt; }
+        p, ul, li {
+            font-size: 11pt;
+            margin: 5px 0;
+            color: #000;
+        }
+        ul {
             list-style: disc;
             padding-left: 20px;
-            margin: 0.2em 0;
+            margin: 10px 0;
         }
-        .pdf-content p {
-            margin: 0.2em 0;
-        }
-        .pdf-content div {
-            margin-bottom: 0.3em;
-        }
-        .summary-table {
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin: 0.5em 0;
+            margin: 10px 0;
+            font-size: 11pt;
         }
-        .summary-table th, .summary-table td {
+        th, td {
             border: 1px solid #ccc;
-            padding: 0.3em;
+            padding: 8px;
             text-align: left;
         }
-        .summary-table th {
-            background-color: #f0f0f0;
+        th {
+            background-color: #003087;
+            color: #fff;
+            font-weight: bold;
+        }
+        .header {
+            font-size: 10pt;
+            color: #666;
+            text-align: right;
+            margin-bottom: 10px;
+        }
+        .footer {
+            font-size: 10pt;
+            color: #666;
+            text-align: center;
+            margin-top: 20px;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+        .button {
+            background-color: #003087;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .button:hover {
+            background-color: #0050b3;
         }
     </style>
 </head>
-<body class="bg-blue-50">
-    <div class="container mx-auto p-6 max-w-4xl">
-        <h1 class="text-3xl font-bold text-center mb-6">Sales Roadmap Tool</h1>
+<body>
+    <div class="container">
+        <h1 style="font-size: 24pt; text-align: center; color: #003087;">Sales Roadmap Tool</h1>
 
         <!-- Instructions -->
-        <div class="bg-blue-100 p-4 rounded-lg mb-6">
-            <h2 class="text-lg font-semibold mb-2">How to Use This Tool</h2>
-            <p class="text-sm">1. Add or remove additional products in the "Manage Additional Products" section.<br>
-               2. Fill out the client form, select products (all Managed Services are available), and specify quantities.<br>
-               3. Click "Generate Roadmap" to create an AI-generated plan.<br>
-               4. Review and download the PDF to include with your proposal.</p>
+        <div class="form-section">
+            <h2 style="font-size: 14pt;">How to Use This Tool</h2>
+            <p>1. Add or remove additional products in the "Manage Additional Products" section.<br>
+               2. Fill out the client form, select products, and specify quantities.<br>
+               3. Click "Generate Roadmap" to create a plan.<br>
+               4. Review and download as PDF or Word for client sharing.</p>
         </div>
 
         <!-- Product Management Section -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h2 class="text-xl font-semibold mb-4">Manage Additional Products</h2>
-            <div class="flex space-x-2 mb-4">
-                <input id="newProduct" type="text" placeholder="Add new product" class="flex-1 p-2 border rounded">
-                <button onclick="addProduct()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Add</button>
+        <div class="form-section">
+            <h2 style="font-size: 14pt;">Manage Additional Products</h2>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <input id="newProduct" type="text" placeholder="Add new product" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <button onclick="addProduct()" class="button">Add</button>
             </div>
-            <ul id="productList" class="list-disc pl-5"></ul>
+            <ul id="productList" style="padding-left: 20px;"></ul>
         </div>
 
         <!-- Client Questions Form -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h2 class="text-xl font-semibold mb-4">Client Questions</h2>
+        <div class="form-section">
+            <h2 style="font-size: 14pt;">Client Questions</h2>
             <form id="clientForm">
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1">Client Name</label>
-                    <input type="text" name="clientName" class="w-full p-2 border rounded" required>
-                    <p class="text-red-500 text-sm hidden error">Please enter a client name.</p>
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-weight: bold;">Client Name</label>
+                    <input type="text" name="clientName" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" required>
+                    <p style="color: red; font-size: 10pt; display: none;" class="error">Please enter a client name.</p>
                 </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1">Current IT Challenges</label>
-                    <textarea name="itChallenges" class="w-full p-2 border rounded" rows="4" required></textarea>
-                    <p class="text-red-500 text-sm hidden error">Please describe the IT challenges.</p>
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-weight: bold;">Current IT Challenges</label>
+                    <textarea name="itChallenges" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; height: 100px;" required></textarea>
+                    <p style="color: red; font-size: 10pt; display: none;" class="error">Please describe the IT challenges.</p>
                 </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1">Business Goals for Next 12 Months</label>
-                    <textarea name="businessGoals" class="w-full p-2 border rounded" rows="4" required></textarea>
-                    <p class="text-red-500 text-sm hidden error">Please describe the business goals.</p>
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-weight: bold;">Business Goals for Next 12 Months</label>
+                    <textarea name="businessGoals" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; height: 100px;" required></textarea>
+                    <p style="color: red; font-size: 10pt; display: none;" class="error">Please describe the business goals.</p>
                 </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1">Current IT Infrastructure</label>
-                    <textarea name="currentInfra" class="w-full p-2 border rounded" rows="4" required></textarea>
-                    <p class="text-red-500 text-sm hidden error">Please describe the current infrastructure.</p>
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-weight: bold;">Current IT Infrastructure</label>
+                    <textarea name="currentInfra" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; height: 100px;" required></textarea>
+                    <p style="color: red; font-size: 10pt; display: none;" class="error">Please describe the current infrastructure.</p>
                 </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1">Select Products and Quantities</label>
-                    <div id="productCheckboxes" class="grid grid-cols-1 gap-2">
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; font-weight: bold;">Select Products and Quantities</label>
+                    <div id="productCheckboxes" style="display: grid; gap: 10px;">
                         <!-- Fixed Managed Services -->
-                        <div class="flex items-center space-x-2">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Vendors" class="mr-2" onchange="toggleQuantityInput(this)">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="display: flex; align-items: center;">
+                                <input type="checkbox" name="products" value="Managed Vendors" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
                                 Managed Vendors
                             </label>
-                            <input type="number" name="quantity_Managed Vendors" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed Vendors" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed remote Helpdesk" class="mr-2" onchange="toggleQuantityInput(this)">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="display: flex; align-items: center;">
+                                <input type="checkbox" name="products" value="Managed remote Helpdesk" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
                                 Managed remote Helpdesk
                             </label>
-                            <input type="number" name="quantity_Managed remote Helpdesk" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed remote Helpdesk" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Onsite Support technician (in hours)" class="mr-2" onchange="toggleQuantityInput(this)">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="display: flex; align-items: center;">
+                                <input type="checkbox" name="products" value="Managed Onsite Support technician (in hours)" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
                                 Managed Onsite Support technician (in hours)
                             </label>
-                            <input type="number" name="quantity_Managed Onsite Support technician (in hours)" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed Onsite Support technician (in hours)" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed M365 instance" class="mr-2" onchange="toggleQuantityInput(this)">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="display: flex; align-items: center;">
+                                <input type="checkbox" name="products" value="Managed M365 instance" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
                                 Managed M365 instance
                             </label>
-                            <input type="number" name="quantity_Managed M365 instance" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed M365 instance" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Local Area network service" class="mr-2" onchange="toggleQuantityInput(this)">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="display: flex; align-items: center;">
+                                <input type="checkbox" name="products" value="Managed Local Area network service" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
                                 Managed Local Area network service
                             </label>
-                            <input type="number" name="quantity_Managed Local Area network service" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed Local Area network service" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Servers" class="mr-2" onchange="toggleQuantityInput(this)">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="display: flex; align-items: center;">
+                                <input type="checkbox" name="products" value="Managed Servers" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
                                 Managed Servers
                             </label>
-                            <input type="number" name="quantity_Managed Servers" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed Servers" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Firewalls" class="mr-2" onchange="toggleQuantityInput(this)">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="display: flex; align-items: center;">
+                                <input type="checkbox" name="products" value="Managed Firewalls" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
                                 Managed Firewalls
                             </label>
-                            <input type="number" name="quantity_Managed Firewalls" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed Firewalls" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Azure IaaS service" class="mr-2" onchange="toggleQuantityInput(this)">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="display: flex; align-items: center;">
+                                <input type="checkbox" name="products" value="Managed Azure IaaS service" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
                                 Managed Azure IaaS service
                             </label>
-                            <input type="number" name="quantity_Managed Azure IaaS service" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed Azure IaaS service" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="products" value="Managed Cybersecurity & SOC service" class="mr-2" onchange="toggleQuantityInput(this)">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="display: flex; align-items: center;">
+                                <input type="checkbox" name="products" value="Managed Cybersecurity & SOC service" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
                                 Managed Cybersecurity & SOC service
                             </label>
-                            <input type="number" name="quantity_Managed Cybersecurity & SOC service" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed Cybersecurity & SOC service" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                         </div>
-                        <!-- Additional products will be populated here -->
                     </div>
-                    <p id="productError" class="text-red-500 text-sm hidden">Please select at least one product and specify quantities for all selected products.</p>
+                    <p id="productError" style="color: red; font-size: 10pt; display: none;">Please select at least one product and specify quantities.</p>
                 </div>
-                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center">
+                <button type="submit" class="button" style="display: flex; align-items: center;">
                     <span>Generate Roadmap</span>
-                    <svg id="loadingSpinner" class="animate-spin h-5 w-5 ml-2 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    <svg id="loadingSpinner" class="animate-spin" style="width: 20px; height: 20px; margin-left: 8px; display: none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                     </svg>
                 </button>
             </form>
         </div>
 
         <!-- Roadmap Preview -->
-        <div id="roadmapPreview" class="hidden bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-xl font-semibold mb-4">Roadmap Preview</h2>
-            <div id="roadmapContent" class="pdf-content"></div>
-            <button onclick="downloadPDF()" class="mt-4 bg-blue-500 text-white mx-auto px-4 py-2 rounded hover:bg-blue-600">Download as PDF</button>
+        <div id="roadmapPreview" class="preview-section" style="display: none;">
+            <h2 style="font-size: 14pt;">Roadmap Preview</h2>
+            <div id="roadmapContent" class="doc-content"></div>
+            <div style="margin-top: 20px;">
+                <button onclick="downloadPDF()" class="button">Download as PDF</button>
+                <button onclick="downloadWord()" class="button">Download as Word</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Fixed Managed Services (non-removable)
+        // Fixed Managed Services
         const fixedProducts = [
             "Managed Vendors",
             "Managed remote Helpdesk",
@@ -235,58 +330,53 @@
             "Managed Cybersecurity & SOC service"
         ];
 
-        // Additional products (removable)
-        let additionalProducts = [];
-
-        // Load additional products from localStorage if available
-        if (localStorage.getItem('additionalProducts')) {
-            additionalProducts = JSON.parse(localStorage.getItem('additionalProducts'));
-        }
+        // Additional products
+        let additionalProducts = JSON.parse(localStorage.getItem('additionalProducts')) || [];
 
         // Populate product list and checkboxes
         function populateProducts() {
             const productList = document.getElementById('productList');
             const productCheckboxes = document.getElementById('productCheckboxes');
-            // Keep fixed Managed Services checkboxes, clear additional ones
             const fixedDivs = Array.from(productCheckboxes.children).slice(0, fixedProducts.length);
             productCheckboxes.innerHTML = '';
             fixedDivs.forEach(div => productCheckboxes.appendChild(div));
 
-            // Populate additional products
             productList.innerHTML = '';
             additionalProducts.forEach((product, index) => {
                 const li = document.createElement('li');
-                li.className = 'flex justify-between items-center';
-                li.innerHTML = `<span>${product}</span><button onclick="removeProduct(${index})" class="text-red-500 hover:text-red-700">Remove</button>`;
+                li.style.margin = '5px 0';
+                li.innerHTML = `<span>${product}</span><button onclick="removeProduct(${index})" style="color: red; margin-left: 10px;">Remove</button>`;
                 productList.appendChild(li);
 
                 const div = document.createElement('div');
-                div.className = 'flex items-center space-x-2';
+                div.style.display = 'flex';
+                div.style.alignItems = 'center';
+                div.style.gap = '10px';
                 div.innerHTML = `
-                    <label class="flex items-center">
-                        <input type="checkbox" name="products" value="${product}" class="mr-2" onchange="toggleQuantityInput(this)">
+                    <label style="display: flex; align-items: center;">
+                        <input type="checkbox" name="products" value="${product}" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
                         ${product}
                     </label>
-                    <input type="number" name="quantity_${product}" class="quantity-input w-20 p-1 border rounded hidden" placeholder="Qty" min="1" disabled>
+                    <input type="number" name="quantity_${product}" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                 `;
                 productCheckboxes.appendChild(div);
             });
         }
 
-        // Toggle quantity input visibility and enable/disable
+        // Toggle quantity input
         function toggleQuantityInput(checkbox) {
             const quantityInput = checkbox.parentElement.nextElementSibling;
             if (checkbox.checked) {
-                quantityInput.classList.remove('hidden');
+                quantityInput.style.display = 'block';
                 quantityInput.disabled = false;
             } else {
-                quantityInput.classList.add('hidden');
+                quantityInput.style.display = 'none';
                 quantityInput.disabled = true;
                 quantityInput.value = '';
             }
         }
 
-        // Add new product with validation
+        // Add new product
         function addProduct() {
             const newProduct = document.getElementById('newProduct').value.trim();
             if (newProduct && !additionalProducts.includes(newProduct) && !fixedProducts.includes(newProduct)) {
@@ -309,13 +399,13 @@
         // Validate form
         function validateForm(formData) {
             let isValid = true;
-            document.querySelectorAll('.error').forEach(error => error.classList.add('hidden'));
-            document.getElementById('productError').classList.add('hidden');
+            document.querySelectorAll('.error').forEach(error => error.style.display = 'none');
+            document.getElementById('productError').style.display = 'none';
 
             ['clientName', 'itChallenges', 'businessGoals', 'currentInfra'].forEach(field => {
                 if (!formData.get(field)) {
                     const input = document.querySelector(`[name="${field}"]`);
-                    input.nextElementSibling.classList.remove('hidden');
+                    input.nextElementSibling.style.display = 'block';
                     isValid = false;
                 }
             });
@@ -326,7 +416,7 @@
             })).filter(p => p.quantity > 0);
 
             if (selectedProducts.length === 0) {
-                document.getElementById('productError').classList.remove('hidden');
+                document.getElementById('productError').style.display = 'block';
                 isValid = false;
             }
 
@@ -337,13 +427,13 @@
         document.getElementById('clientForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const spinner = document.getElementById('loadingSpinner');
-            spinner.classList.remove('hidden');
+            spinner.style.display = 'block';
 
             const formData = new FormData(this);
             const { isValid, selectedProducts } = validateForm(formData);
 
             if (!isValid) {
-                spinner.classList.add('hidden');
+                spinner.style.display = 'none';
                 return;
             }
 
@@ -372,57 +462,130 @@
                 const { roadmap } = await response.json();
                 console.log('AI-generated roadmap:', JSON.stringify(roadmap, null, 2));
 
+                const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
                 let roadmapContent = `
-                    <h3>Roadmap and Strategy for ${data.clientName}</h3>
-                    <p><strong>Client Name:</strong> ${data.clientName}</p>
-                    <p><strong>Current IT Challenges:</strong> ${data.itChallenges}</p>
-                    <p><strong>Business Goals (Next 12 Months):</strong> ${data.businessGoals}</p>
-                    <p><strong>Current IT Infrastructure:</strong> ${data.currentInfra}</p>
-                    <p><strong>Recommended Products:</strong></p>
-                    <ul>${data.products.map(p => `<li>${p.product} (${p.quantity} units)</li>`).join('')}</ul>
-                    <h4>Implementation Plan and Timeline</h4>
+                    <div class="cover-page">
+                        <img src="https://via.placeholder.com/200x50.png?text=Your+Logo" alt="Company Logo" style="max-width: 200px;">
+                        <h1 style="font-size: 24pt;">IT Roadmap and Strategy</h1>
+                        <p style="font-size: 14pt;">Prepared for ${data.clientName}</p>
+                        <p>Prepared by: Your Company Name</p>
+                        <p>Contact: info@yourcompany.com | (123) 456-7890</p>
+                        <p>Date: ${currentDate}</p>
+                    </div>
+                    <div class="toc">
+                        <h2 style="font-size: 14pt;">Table of Contents</h2>
+                        <ul>
+                            <li><a href="#overview">1. Executive Summary</a></li>
+                            <li><a href="#client">2. Client Overview</a></li>
+                            <li><a href="#roadmap">3. Implementation Roadmap</a></li>
+                            <li><a href="#nextsteps">4. Next Steps</a></li>
+                        </ul>
+                    </div>
+                    <div id="overview">
+                        <h2 style="font-size: 14pt;">1. Executive Summary</h2>
+                        <p>This roadmap outlines a strategic 12-month plan to address ${data.clientName}'s IT challenges and achieve their business goals through tailored managed services. By leveraging our expertise, we aim to enhance system reliability, security, and scalability.</p>
+                    </div>
+                    <div id="client">
+                        <h2 style="font-size: 14pt;">2. Client Overview</h2>
+                        <h3 style="font-size: 12pt;">Client Name</h3>
+                        <p>${data.clientName}</p>
+                        <h3 style="font-size: 12pt;">Current IT Challenges</h3>
+                        <p>${data.itChallenges.replace(/\n/g, '<br>')}</p>
+                        <h3 style="font-size: 12pt;">Business Goals (Next 12 Months)</h3>
+                        <p>${data.businessGoals.replace(/\n/g, '<br>')}</p>
+                        <h3 style="font-size: 12pt;">Current IT Infrastructure</h3>
+                        <p>${data.currentInfra.replace(/\n/g, '<br>')}</p>
+                        <h3 style="font-size: 12pt;">Recommended Products</h3>
+                        <ul style="padding-left: 20px;">
+                            ${data.products.map(p => `<li>${p.product} (${p.quantity} units)</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div id="roadmap">
+                        <h2 style="font-size: 14pt;">3. Implementation Roadmap</h2>
                 `;
 
                 roadmap.milestones.forEach((milestone, index) => {
                     roadmapContent += `
                         <div>
-                            <h5>Milestone ${index + 1}: ${milestone.name} (${milestone.timeframe})</h5>
-                            <p><strong>Products Utilized:</strong> ${milestone.productsUsed ? milestone.productsUsed.join(', ') : 'None'}</p>
-                            <p><strong>What We’ll Deliver:</strong></p>
-                            <ul>${milestone.deliverables.map(d => `<li>${d}</li>`).join('')}</ul>
-                            <p><strong>How We’ll Do It:</strong> ${milestone.approach}</p>
-                            <p><strong>Project Plan:</strong></p>
-                            <ul>${milestone.projectPlan ? milestone.projectPlan.map(p => `<li>${p.task} (Timeline: ${p.timeline}, Effort: ${p.effortHours} hours, Product: ${p.product}, Dependencies: ${p.dependencies})</li>`).join('') : 'No project plan provided'}</ul>
-                            <p><strong>Best Practices:</strong></p>
-                            <ul>${milestone.bestPractices ? milestone.bestPractices.map(b => `<li>${b.product}: ${b.guideline}</li>`).join('') : 'No best practices provided'}</ul>
-                            <p><strong>Potential Risks:</strong></p>
-                            <ul>${milestone.risks.map(r => `<li>${r}</li>`).join('')}</ul>
-                            <p><strong>Success Metrics:</strong></p>
-                            <ul>${milestone.kpis.map(k => `<li>${k}</li>`).join('')}</ul>
-                            <p><strong>Effort Summary:</strong></p>
-                            <table class="summary-table">
-                                <tr><th>Task</th><th>Hours</th><th>Product</th></tr>
-                                ${milestone.summaryTable ? milestone.summaryTable.map(t => `<tr><td>${t.task}</td><td>${t.hours}</td><td>${t.product}</td></tr>`).join('') : '<tr><td colspan="3">No effort summary provided</td></tr>'}
+                            <h3 style="font-size: 12pt;">3.${index + 1} Milestone ${index + 1}: ${milestone.name} (${milestone.timeframe})</h3>
+                            <h4 style="font-size: 11pt;">Products Utilized</h4>
+                            <p>${milestone.productsUsed ? milestone.productsUsed.join(', ') : 'None'}</p>
+                            <h4 style="font-size: 11pt;">What We’ll Deliver</h4>
+                            <ul style="padding-left: 20px;">
+                                ${milestone.deliverables.map(d => `<li>${d}</li>`).join('')}
+                            </ul>
+                            <h4 style="font-size: 11pt;">How We’ll Do It</h4>
+                            <p>${milestone.approach}</p>
+                            <h4 style="font-size: 11pt;">Project Plan</h4>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Task</th>
+                                    <th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Timeline</th>
+                                    <th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Effort (Hours)</th>
+                                    <th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Product</th>
+                                    <th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Dependencies</th>
+                                </tr>
+                                ${milestone.projectPlan ? milestone.projectPlan.map(p => `
+                                    <tr>
+                                        <td style="border: 1px solid #ccc; padding: 8px;">${p.task}</td>
+                                        <td style="border: 1px solid #ccc; padding: 8px;">${p.timeline}</td>
+                                        <td style="border: 1px solid #ccc; padding: 8px;">${p.effortHours}</td>
+                                        <td style="border: 1px solid #ccc; padding: 8px;">${p.product}</td>
+                                        <td style="border: 1px solid #ccc; padding: 8px;">${p.dependencies}</td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="5" style="border: 1px solid #ccc; padding: 8px;">No project plan provided</td></tr>'}
+                            </table>
+                            <h4 style="font-size: 11pt;">Best Practices</h4>
+                            <ul style="padding-left: 20px;">
+                                ${milestone.bestPractices ? milestone.bestPractices.map(b => `<li>${b.product}: ${b.guideline}</li>`).join('') : '<li>No best practices provided</li>'}
+                            </ul>
+                            <h4 style="font-size: 11pt;">Potential Risks</h4>
+                            <ul style="padding-left: 20px;">
+                                ${milestone.risks.map(r => `<li>${r}</li>`).join('')}
+                            </ul>
+                            <h4 style="font-size: 11pt;">Success Metrics</h4>
+                            <ul style="padding-left: 20px;">
+                                ${milestone.kpis.map(k => `<li>${k}</li>`).join('')}
+                            </ul>
+                            <h4 style="font-size: 11pt;">Effort Summary</h4>
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Task</th>
+                                    <th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Hours</th>
+                                    <th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Product</th>
+                                </tr>
+                                ${milestone.summaryTable ? milestone.summaryTable.map(t => `
+                                    <tr>
+                                        <td style="border: 1px solid #ccc; padding: 8px;">${t.task}</td>
+                                        <td style="border: 1px solid #ccc; padding: 8px;">${t.hours}</td>
+                                        <td style="border: 1px solid #ccc; padding: 8px;">${t.product}</td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="3" style="border: 1px solid #ccc; padding: 8px;">No effort summary provided</td></tr>'}
                             </table>
                         </div>
                     `;
                 });
 
                 roadmapContent += `
-                    <p><strong>Next Steps:</strong></p>
-                    <p>${roadmap.nextSteps}</p>
+                    <div id="nextsteps">
+                        <h2 style="font-size: 14pt;">4. Next Steps</h2>
+                        <p>${roadmap.nextSteps}</p>
+                    </div>
+                    <div class="footer">
+                        <p>Your Company Name | IT Roadmap for ${data.clientName} | Page <span class="page-number"></span> | ${currentDate}</p>
+                    </div>
                 `;
 
                 const roadmapContentDiv = document.getElementById('roadmapContent');
                 console.log('Rendering roadmap content:', roadmapContent);
                 roadmapContentDiv.innerHTML = roadmapContent;
-                console.log('Roadmap content for PDF:', roadmapContentDiv.innerHTML);
-                document.getElementById('roadmapPreview').classList.remove('hidden');
+                console.log('Roadmap content for export:', roadmapContentDiv.innerHTML);
+                document.getElementById('roadmapPreview').style.display = 'block';
             } catch (error) {
                 console.error('Error generating roadmap:', error);
                 alert('Failed to generate roadmap. Please check your Netlify Function setup or contact support.');
             } finally {
-                spinner.classList.add('hidden');
+                spinner.style.display = 'none';
             }
         });
 
@@ -435,7 +598,7 @@
                 margin: [0.5, 0.5, 0.5, 0.5],
                 filename: 'Roadmap_Strategy.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+                html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
 
@@ -452,6 +615,60 @@
             } catch (err) {
                 console.error('PDF setup error:', err);
                 alert('Failed to setup PDF generation. Please try again.');
+            }
+        }
+
+        // Download Word
+        function downloadWord() {
+            const sourceElement = document.getElementById('roadmapContent');
+            console.log('Source content for Word:', sourceElement.innerHTML);
+
+            const header = `
+                <div class="header">
+                    <p>Your Company Name | IT Roadmap for ${document.querySelector('[name="clientName"]').value} | ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                </div>
+            `;
+            const content = header + sourceElement.innerHTML;
+            const docContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { font-family: Calibri, sans-serif; font-size: 11pt; color: #000; margin: 0.5in; }
+                        h1 { font-size: 24pt; color: #003087; }
+                        h2 { font-size: 14pt; color: #003087; }
+                        h3 { font-size: 12pt; color: #003087; }
+                        h4 { font-size: 11pt; color: #003087; }
+                        h5 { font-size: 10pt; color: #003087; }
+                        p, ul, li { font-size: 11pt; margin: 5px 0; }
+                        ul { padding-left: 20px; list-style: disc; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #ccc; padding: 8px; }
+                        th { background-color: #003087; color: #fff; }
+                        .header { font-size: 10pt; color: #666; text-align: right; }
+                        .footer { font-size: 10pt; color: #666; text-align: center; border-top: 1px solid #ccc; padding-top: 10px; }
+                    </style>
+                </head>
+                <body>${content}</body>
+                </html>
+            `;
+
+            try {
+                console.log('Starting Word generation...');
+                const converted = htmlDocx.asBlob(docContent);
+                const url = window.URL.createObjectURL(converted);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'Roadmap_Strategy.docx';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                console.log('Word document generated successfully');
+            } catch (err) {
+                console.error('Word generation error:', err);
+                alert('Failed to generate Word document. Please try again.');
             }
         }
 
