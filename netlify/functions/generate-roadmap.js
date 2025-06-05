@@ -1,20 +1,34 @@
 const fetch = require('node-fetch');
 
-// Simple JSON repair function to fix truncated JSON
+// Enhanced JSON repair function to fix truncated JSON
 function repairJson(jsonString) {
   try {
     return JSON.parse(jsonString);
   } catch (e) {
     let repaired = jsonString.trim();
-    if (!repaired.endsWith('}')) {
-      repaired = repaired.substring(0, repaired.lastIndexOf(',') + 1) + '}';
+    // Remove trailing incomplete text
+    repaired = repaired.replace(/,\s*[^,{}[\]]*$/, '');
+    // Count open and close braces/brackets
+    let openBraces = (repaired.match(/{/g) || []).length;
+    let closeBraces = (repaired.match(/}/g) || []).length;
+    let openBrackets = (repaired.match(/\[/g) || []).length;
+    let closeBrackets = (repaired.match(/\]/g) || []).length;
+    // Add missing closing braces
+    while (openBraces > closeBraces) {
+      repaired += '}';
+      closeBraces++;
     }
-    if (repaired.includes('"milestones":[') && !repaired.includes(']')) {
-      repaired = repaired.substring(0, repaired.lastIndexOf('{')) + ']}';
+    // Add missing closing brackets
+    while (openBrackets > closeBrackets) {
+      repaired += ']';
+      closeBrackets++;
     }
+    // Remove trailing commas
+    repaired = repaired.replace(/,\s*([}\]])/g, '$1');
     try {
       return JSON.parse(repaired);
     } catch (err) {
+      console.error('Failed to repair JSON:', repaired);
       throw new Error(`Failed to repair JSON: ${err.message}`);
     }
   }
@@ -101,7 +115,7 @@ exports.handler = async function(event, context) {
           model: 'grok-3',
           stream: false,
           temperature: 0,
-          max_tokens: 600
+          max_tokens: 700
         }),
         signal: controller.signal
       });
