@@ -370,7 +370,7 @@
                 }
 
                 const { roadmap } = await response.json();
-                console.log('AI-generated roadmap:', roadmap);
+                console.log('AI-generated roadmap:', JSON.stringify(roadmap, null, 2));
 
                 let roadmapContent = `
                     <h3>Roadmap and Strategy for ${data.clientName}</h3>
@@ -392,9 +392,9 @@
                             <ul>${milestone.deliverables.map(d => `<li>${d}</li>`).join('')}</ul>
                             <p><strong>How We’ll Do It:</strong> ${milestone.approach}</p>
                             <p><strong>Project Plan:</strong></p>
-                            <ul>${milestone.projectPlan ? milestone.projectPlan.map(p => `<li>${p.task} (Timeline: ${p.timeline}, Effort: ${p.effortHours} hours, Product: ${p.product}, Dependencies: ${p.dependencies})</li>`).join('') : 'None'}</ul>
+                            <ul>${milestone.projectPlan ? milestone.projectPlan.map(p => `<li>${p.task} (Timeline: ${p.timeline}, Effort: ${p.effortHours} hours, Product: ${p.product}, Dependencies: ${p.dependencies})</li>`).join('') : 'No project plan provided'}</ul>
                             <p><strong>Best Practices:</strong></p>
-                            <ul>${milestone.bestPractices ? milestone.bestPractices.map(b => `<li>${b.product}: ${b.guideline}</li>`).join('') : 'None'}</ul>
+                            <ul>${milestone.bestPractices ? milestone.bestPractices.map(b => `<li>${b.product}: ${b.guideline}</li>`).join('') : 'No best practices provided'}</ul>
                             <p><strong>Potential Risks:</strong></p>
                             <ul>${milestone.risks.map(r => `<li>${r}</li>`).join('')}</ul>
                             <p><strong>Success Metrics:</strong></p>
@@ -402,7 +402,7 @@
                             <p><strong>Effort Summary:</strong></p>
                             <table class="summary-table">
                                 <tr><th>Task</th><th>Hours</th><th>Product</th></tr>
-                                ${milestone.summaryTable ? milestone.summaryTable.map(t => `<tr><td>${t.task}</td><td>${t.hours}</td><td>${t.product}</td></tr>`).join('') : '<tr><td colspan="3">No tasks defined</td></tr>'}
+                                ${milestone.summaryTable ? milestone.summaryTable.map(t => `<tr><td>${t.task}</td><td>${t.hours}</td><td>${t.product}</td></tr>`).join('') : '<tr><td colspan="3">No effort summary provided</td></tr>'}
                             </table>
                         </div>
                     `;
@@ -414,6 +414,7 @@
                 `;
 
                 const roadmapContentDiv = document.getElementById('roadmapContent');
+                console.log('Rendering roadmap content:', roadmapContent);
                 roadmapContentDiv.innerHTML = roadmapContent;
                 console.log('Roadmap content for PDF:', roadmapContentDiv.innerHTML);
                 document.getElementById('roadmapPreview').classList.remove('hidden');
