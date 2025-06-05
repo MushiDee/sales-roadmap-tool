@@ -50,9 +50,9 @@
             font-family: Arial, sans-serif;
             font-size: 12pt;
             color: #000;
-            line-height: 1.5;
+            line-height: 1.4;
             width: 7.5in;
-            max-height: 10in;
+            max-height: 9.5in;
             overflow: hidden;
             break-inside: avoid;
             page-break-inside: avoid;
@@ -66,6 +66,7 @@
         .pdf-content ul {
             list-style: disc;
             padding-left: 20px;
+            margin: 0.3em 0;
             break-inside: avoid;
             page-break-inside: avoid;
         }
@@ -83,6 +84,8 @@
             top: -9999px;
             left: -9999px;
             width: 7.5in;
+            max-height: 9.5in;
+            overflow: hidden;
         }
     </style>
 </head>
@@ -430,18 +433,20 @@
                 margin: [0.5, 0.5, 0.5, 0.5],
                 filename: 'Roadmap_Strategy.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
+                html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
                 pagebreak: { mode: ['css'], avoid: ['h3', 'h4', 'h5', 'ul', 'p', 'div'] }
             };
 
             setTimeout(() => {
-                html2pdf().from(tempContainer).set(opt).save().then(() => {
+                html2pdf().from(tempContainer).set(opt).outputPdf().then(pdf => {
+                    pdf.save();
                     // Clear temporary container
                     tempContainer.innerHTML = '';
                     console.log('PDF generated successfully');
                 }).catch(err => {
                     console.error('PDF generation error:', err);
+                    tempContainer.innerHTML = '';
                     alert('Failed to generate PDF. Please try again.');
                 });
             }, 500);
