@@ -51,9 +51,9 @@
             font-family: Arial, Helvetica, sans-serif;
             font-size: 12pt;
             color: #000000;
-            line-height: 1.5;
+            line-height: 1.6;
             background-color: #ffffff;
-            padding: 20px;
+            padding: 15px;
             width: 100%;
             box-sizing: border-box;
         }
@@ -78,12 +78,17 @@
             position: absolute;
             top: -9999px;
             left: -9999px;
-            width: 8.5in;
+            width: 7.5in; /* 8.5in - 1in margins */
             background-color: #ffffff;
             padding: 0.5in;
         }
-        .page-break {
-            page-break-before: always;
+        .milestone {
+            margin-bottom: 1em;
+        }
+        .debug-canvas {
+            max-width: 100%;
+            border: 1px solid red;
+            display: none; /* Toggle to block for debugging */
         }
     </style>
 </head>
@@ -428,30 +433,24 @@
             const renderContainer = document.getElementById('pdfRenderContainer');
             renderContainer.innerHTML = sourceElement.innerHTML;
 
-            // Add page breaks for long content
-            const milestones = renderContainer.querySelectorAll('.milestone');
-            milestones.forEach((milestone, index) => {
-                if (index > 0) {
-                    milestone.classList.add('page-break');
-                }
-            });
-
             console.log('Rendering content for PDF...');
             try {
                 const canvas = await html2canvas(renderContainer, {
-                    scale: 2,
+                    scale: 1, // Reduced scale to avoid compression
                     useCORS: true,
                     logging: true,
                     backgroundColor: '#ffffff'
                 });
-                console.log('Canvas generated:', canvas);
+                console.log('Canvas generated:', canvas.width, canvas.height);
 
-                // Debug: Append canvas to DOM to verify rendering
-                const debugImg = document.createElement('img');
-                debugImg.src = canvas.toDataURL('image/png');
-                debugImg.style.maxWidth = '100%';
-                document.body.appendChild(debugImg);
-                console.log('Debug image appended to DOM');
+                // Debug: Append canvas to DOM
+                const debugCanvas = document.createElement('canvas');
+                debugCanvas.className = 'debug-canvas';
+                debugCanvas.width = canvas.width;
+                debugCanvas.height = canvas.height;
+                debugCanvas.getContext('2d').drawImage(canvas, 0, 0);
+                document.body.appendChild(debugCanvas);
+                console.log('Debug canvas appended to DOM');
 
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF({
@@ -462,12 +461,12 @@
 
                 const imgData = canvas.toDataURL('image/jpeg', 0.98);
                 const imgProps = pdf.getImageProperties(imgData);
-                const pdfWidth = pdf.internal.pageSize.getWidth() - 1; // 0.5in margin
-                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                const pdfWidth = 7.5; // 8.5in - 1in margins
+                const pdfHeight = (imgProps.height / imgProps.width) * pdfWidth; // Correct aspect ratio
 
-                let position = 0.5; // Start at 0.5in margin
+                let position = 0.5;
                 let remainingHeight = pdfHeight;
-                const pageHeight = pdf.internal.pageSize.getHeight() - 1;
+                const pageHeight = 10; // 11in - 1in margins
 
                 while (remainingHeight > 0) {
                     const heightToAdd = Math.min(remainingHeight, pageHeight);
@@ -475,7 +474,7 @@
                     remainingHeight -= heightToAdd;
                     if (remainingHeight > 0) {
                         pdf.addPage();
-                        position = 0.5 - (heightToAdd * (pdfWidth / imgProps.width));
+                        position = 0.5;
                     }
                 }
 
@@ -483,8 +482,8 @@
                 pdf.save('Roadmap_Strategy.pdf');
                 console.log('PDF generation completed');
 
-                // Clean up debug image
-                document.body.removeChild(debugImg);
+                // Clean up debug canvas
+                document.body.removeChild(debugCanvas);
                 renderContainer.innerHTML = '';
             } catch (err) {
                 console.error('PDF generation error:', err);
