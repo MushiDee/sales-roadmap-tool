@@ -9,7 +9,7 @@ exports.handler = async function(event, context) {
     'Vary': 'Origin'
   };
 
-  console.log('Function invoked:', { method: event.httpMethod, path: event.path, body: event.body });
+  console.log('Function invoked:', { method: event.httpMethod, path: event.path, bodyLength: event.body ? event.body.length : 0 });
 
   if (event.httpMethod === 'OPTIONS') {
     console.log('Handling OPTIONS preflight');
@@ -31,7 +31,7 @@ exports.handler = async function(event, context) {
 
   try {
     console.log('Parsing request body');
-    const data = JSON.parse(event.body);
+    const data = JSON.parse(event.body || '{}');
     const { clientName, itChallenges, businessGoals, currentInfra, products } = data;
 
     if (!clientName || !itChallenges || !businessGoals || !currentInfra || !products || !Array.isArray(products)) {
@@ -39,107 +39,86 @@ exports.handler = async function(event, context) {
       throw new Error('Invalid input data');
     }
 
-    console.log('Constructing prompt');
+    console.log('Constructing simplified prompt');
     const prompt = `
-      You are an expert IT consultant for a managed services provider specializing in IT support and Microsoft Cloud services. Create a 12-month IT roadmap with three milestones tailored to the client's needs, infrastructure, and selected products. For each product in each milestone, you MUST include:
-      - A project plan with exactly 3 tasks (e.g., discovery, configuration, training), each with a timeline (e.g., Week 1-2), effort hours (e.g., 10 hours), associated product, and dependencies (e.g., licensing/hardware costs excluded).
-      - A summary table listing each task, its hours, and associated product.
-      - Response points detailing:
-        - How the product addresses the client's IT challenges.
-        - Its contribution to the client's business goals.
-        - A deliverable tied to the product's quantity.
-      - One industry best practice guideline for deploying and running the product (e.g., ITIL 4, NIST, Microsoft Zero Trust).
-      Each milestone must include:
-      - A unique name and timeframe (e.g., Months 1-4).
-      - 3 deliverables, each referencing a product, its quantity, and any licensing/hardware exclusions.
-      - An approach in clear, non-technical language, linking response points to challenges and goals.
-      - 2 risks specific to the infrastructure or product deployment, including licensing/hardware risks.
-      - 3 measurable KPIs tailored to the client's scale and product outcomes (e.g., "95% ticket resolution within 1 hour").
-      For Managed remote Helpdesk, specify whether the default 8/5 service (8 hours/day, 5 days/week) or optional 24/7 add-on is assumed, based on client challenges (e.g., 24/7 for critical systems). Provide next steps that are actionable, specific, include a timeline (e.g., within 2 weeks), reference actions for each product (e.g., "Procure M365 licenses"), and clarify 8/5 vs. 24/7 for Managed remote Helpdesk. Use exact product names to avoid misspellings. The roadmap must be professional, client-centric, and jargon-free.
+      You are an expert IT consultant. Create a 1-month IT roadmap with one milestone for the client ${clientName}. For each product, include:
+      - A project plan with 1 task (e.g., setup), timeline (Week 1), effort hours (e.g., 5 hours), product, and dependencies (e.g., licensing excluded).
+      - A summary table with the task, hours, and product.
+      - One deliverable tied to the product's quantity.
+      - One best practice guideline (e.g., ITIL 4).
+      The milestone must include:
+      - Name: "Initial Setup"
+      - Timeframe: "Weeks 1-2"
+      - 1 deliverable per product
+      - Approach in non-technical language
+      - 1 risk
+      - 1 KPI (e.g., "90% uptime")
+      For Managed remote Helpdesk, assume 8/5 service. Provide one next step with a 1-week timeline. Use exact product names.
 
       Service Context:
-      - Managed Vendors: Coordinates third-party vendor services (e.g., hardware, software) with quarterly reviews. No licensing or hardware costs included; managed via vendor agreements.
-      - Managed remote Helpdesk: Provides remote IT support, defaulting to 8/5 coverage (8 hours/day, 5 days/week, 9 AM–5 PM local time) with an optional 24/7 add-on for critical systems. Uses ConnectWise for ticketing with SLA-backed response times (<1 hour for critical issues). Licensing costs for ticketing software are excluded and must be purchased separately.
-      - Managed Onsite Support technician (in hours): Hourly on-site support for hardware/software issues with priority scheduling. No licensing or hardware costs typically required.
-      - Managed M365 instance: Manages Microsoft 365 tenants, including user provisioning, security (e.g., MFA), and tools (e.g., Teams). M365 licenses are excluded and must be purchased separately.
-      - Managed Local Area network service: Monitors LAN (e.g., switches, routers) for performance and security using Cisco Meraki. Hardware (e.g., routers) and licensing costs for monitoring tools are excluded and must be purchased separately.
-      - Managed Servers: Manages physical/virtual servers with patching, backups, and 99.9% uptime. Server hardware and OS licenses (e.g., Windows Server) are excluded and must be purchased separately.
-      - Managed Firewalls: Configures firewalls (e.g., Fortinet) with real-time intrusion detection. Firewall hardware and licensing costs are excluded and must be purchased separately.
-      - Managed Azure IaaS service: Deploys Azure infrastructure (e.g., VMs) for scalability. Azure subscription costs and licenses are excluded and must be covered by the client.
-      - Managed Cybersecurity & SOC service: 24/7 security monitoring and compliance (e.g., GDPR) via a Security Operations Center. Licensing costs for security tools (e.g., SIEM) are excluded and must be purchased separately.
-      - Additional Products: Custom solutions tailored to client needs. Licensing or hardware dependencies, if any, are excluded unless specified and must be purchased separately.
+      - Managed remote Helpdesk: 8/5 IT support, ticketing software license excluded.
+      - Managed Onsite Support technician (in hours): Hourly on-site support, no licensing costs.
+      - Managed Servers: Manages servers, hardware/OS licenses excluded.
 
       Client Information:
-      - Client Name: ${clientName}
-      - IT Challenges: ${itChallenges}
-      - Business Goals (Next 12 Months): ${businessGoals}
-      - Current Infrastructure: ${currentInfra}
-      - Products and Quantities: ${products.map(p => `${p.product} (${p.quantity} units)`).join(', ')}
+      - Name: ${clientName}
+      - Challenges: ${itChallenges}
+      - Goals: ${businessGoals}
+      - Infrastructure: ${currentInfra}
+      - Products: ${products.map(p => `${p.product} (${p.quantity} units)`).join(', ')}
 
-      Example Milestone Structure:
+      Example Milestone:
       {
-        "name": "Infrastructure Stabilization",
-        "timeframe": "Months 1-4",
-        "deliverables": ["Deploy 10 units of Managed remote Helpdesk (8/5), ticketing software license excluded"],
-        "approach": "Implement rapid-response support to reduce outages using Managed remote Helpdesk.",
-        "risks": ["Delays in procuring ticketing software license", "Staff training gaps"],
-        "kpis": ["95% ticket resolution within 1 hour", "99.5% server uptime", "100% VPN uptime for remote access"],
+        "name": "Initial Setup",
+        "timeframe": "Weeks 1-2",
+        "deliverables": ["Deploy 10 units of Managed remote Helpdesk (8/5)"],
+        "approach": "Set up support to reduce outages.",
+        "risks": ["License delay"],
+        "kpis": ["90% uptime"],
         "productsUsed": ["Managed remote Helpdesk"],
-        "projectPlan": [
-          {"task": "Install ticketing system", "timeline": "Week 1-2", "effortHours": 20, "product": "Managed remote Helpdesk", "dependencies": "Ticketing software license excluded"},
-          {"task": "Train 10 users", "timeline": "Week 3-4", "effortHours": 40, "product": "Managed remote Helpdesk", "dependencies": "None"},
-          {"task": "Configure SLAs", "timeline": "Week 2-3", "effortHours": 15, "product": "Managed remote Helpdesk", "dependencies": "None"}
-        ],
-        "bestPractices": [{"product": "Managed remote Helpdesk", "guideline": "Follow ITIL 4 for incident management"}],
-        "summaryTable": [
-          {"task": "Install ticketing system", "hours": 20, "product": "Managed remote Helpdesk"},
-          {"task": "Train 10 users", "hours": 40, "product": "Managed remote Helpdesk"},
-          {"task": "Configure SLAs", "hours": 15, "product": "Managed remote Helpdesk"}
-        ]
+        "projectPlan": [{"task": "Setup", "timeline": "Week 1", "effortHours": 5, "product": "Managed remote Helpdesk", "dependencies": "License excluded"}],
+        "bestPractices": [{"product": "Managed remote Helpdesk", "guideline": "ITIL 4"}],
+        "summaryTable": [{"task": "Setup", "hours": 5, "product": "Managed remote Helpdesk"}]
       }
 
-      Return the response in JSON format with:
-      - milestones: array of milestone objects (name, timeframe, deliverables, approach, risks, kpis, productsUsed, projectPlan: array of {task, timeline, effortHours, product, dependencies}, bestPractices: array of {product, guideline}, summaryTable: array of {task, hours, product})
-      - nextSteps: string describing actionable next steps with timelines
-
-      Ensure projectPlan and summaryTable are included for each milestone, or the response will be considered invalid.
+      Return JSON with:
+      - milestones: array of milestone objects
+      - nextSteps: string
     `;
 
     console.log('Calling xAI Grok API');
+    const startTime = Date.now();
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.GROK_API_KEY}`,
+        'Authorization': 'Bearer ' + (process.env.GROK_API_KEY || ''),
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         model: 'grok-3',
-        messages: [
-          { role: 'system', content: 'You are an expert IT consultant.' },
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 4000, // Reduced to avoid timeout
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 2000,
         temperature: 0.7
       }),
-      timeout: 8000 // 8-second timeout to avoid Netlify limit
+      timeout: 6000 // 6-second timeout
     }).catch(err => {
-      console.error('API fetch error:', err.message);
+      console.error('API fetch error:', err.message, { duration: Date.now() - startTime });
       throw err;
     });
 
-    console.log('Received API response:', response.status);
+    console.log(`API response status: ${response.status}, duration: ${Date.now() - startTime} ms`);
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Grok API request failed:', response.status, errorText);
+      console.error('API request failed:', response.status, errorText);
       return {
-        statusCode: response.status,
+        statusCode: 500,
         headers: corsHeaders,
-        body: JSON.stringify({ error: `Grok API request failed: ${errorText}` })
+        body: JSON.stringify({ error: `API request failed: ${errorText}` })
       };
     }
 
     const apiResponse = await response.json();
-    console.log('Raw Grok API response:', JSON.stringify(apiResponse, null, 2));
+    console.log('Raw Grok API response length:', JSON.stringify(apiResponse).length);
 
     let roadmap;
     try {
@@ -148,77 +127,57 @@ exports.handler = async function(event, context) {
         throw new Error('No valid content in API response');
       }
       roadmap = JSON.parse(apiResponse.choices[0].message.content);
-      console.log('Parsed roadmap:', JSON.stringify(roadmap, null, 2));
-      // Validate projectPlan and summaryTable
-      if (!roadmap.milestones.every(m => m.projectPlan && Array.isArray(m.projectPlan) && m.projectPlan.length === 3 * m.productsUsed.length && m.summaryTable && Array.isArray(m.summaryTable) && m.summaryTable.length === 3 * m.productsUsed.length)) {
+      console.log('Parsed roadmap objects:', roadmap.milestones?.length || 0);
+      if (!roadmap.milestones.every(m => m.projectPlan && Array.isArray(m.projectPlan) && m.projectPlan.length >= products.length && m.summaryTable && Array.isArray(m.summaryTable) && m.summaryTable.length >= products.length)) {
         console.error('Missing projectPlan or summaryTable');
-        throw new Error('Missing or incomplete projectPlan or summaryTable in API response');
+        throw new Error('Missing or incomplete projectPlan or summaryTable');
       }
-      console.log('Project plans included:', roadmap.milestones.every(m => m.projectPlan && Array.isArray(m.projectPlan) && m.projectPlan.length > 0));
-      console.log('Summary tables included:', roadmap.milestones.every(m => m.summaryTable && Array.isArray(m.summaryTable) && m.summaryTable.length > 0));
+      console.log('Project plans included:', roadmap.milestones.every(m => m.projectPlan?.length > 0));
+      console.log('Summary tables included:', roadmap.milestones.every(m => m.summaryTable?.length > 0));
     } catch (e) {
-      console.error('Invalid JSON or incomplete response:', apiResponse.choices?.[0]?.message?.content || apiResponse, e.message);
+      console.error('Invalid JSON or incomplete response:', apiResponse.choices?.[0]?.message?.content || '', e.message);
       // Fallback roadmap
       roadmap = {
         milestones: [
           {
-            name: 'Fallback Milestone',
-            timeframe: 'Months 1-12',
-            deliverables: [`Basic IT assessment using ${products.map(p => p.product).join(', ')}`],
-            approach: `Conduct a review of ${clientName}'s infrastructure to address ${itChallenges}.`,
-            risks: ['Potential delays', 'Resource constraints'],
-            kpis: ['Complete assessment within 1 month', 'Deploy products within 6 months'],
+            name: "Fallback Milestone",
+            timeframe: "Weeks 1-2",
+            deliverables: [`Basic setup for ${products.map(p => p.product).join(', ')}`],
+            approach: `Initiate setup to address ${itChallenges}.`,
+            risks: ['API timeout'],
+            kpis: ['Complete setup in 2 weeks'],
             productsUsed: products.map(p => p.product),
-            projectPlan: products.flatMap(p => [
-              { task: `Assess ${p.product}`, timeline: 'Week 1-2', effortHours: 10, product: p.product, dependencies: p.product.includes('M365') || p.product.includes('Azure') || p.product.includes('Firewalls') || p.product.includes('Helpdesk') || p.product.includes('LAN') || p.product.includes('Servers') || p.product.includes('Cybersecurity') ? 'Licensing/hardware costs excluded' : 'None' },
-              { task: `Configure ${p.product}`, timeline: 'Week 3-4', effortHours: 15, product: p.product, dependencies: p.product.includes('M365') || p.product.includes('Azure') || p.product.includes('Firewalls') || p.product.includes('Helpdesk') || p.product.includes('LAN') || p.product.includes('Servers') || p.product.includes('Cybersecurity') ? 'Licensing/hardware costs excluded' : 'None' },
-              { task: `Train for ${p.product}`, timeline: 'Week 5-6', effortHours: 20, product: p.product, dependencies: 'None' }
-            ]),
+            projectPlan: products.map(p => ({
+              task: `Setup ${p.product}`,
+              timeline: "Week 1",
+              effortHours: 5,
+              product: p.product,
+              dependencies: p.product.includes('Helpdesk') || p.product.includes('Servers') ? 'Licensing/hardware excluded' : 'None'
+            })),
             bestPractices: products.map(p => ({
               product: p.product,
-              guideline: `Follow industry standards for ${p.product} deployment.`
+              guideline: `Follow industry standards for ${p.product}`
             })),
-            summaryTable: products.flatMap(p => [
-              { task: `Assess ${p.product}`, hours: 10, product: p.product },
-              { task: `Configure ${p.product}`, hours: 15, product: p.product },
-              { task: `Train for ${p.product}`, hours: 20, product: p.product }
-            ])
+            summaryTable: products.map(p => ({
+              task: `Setup ${p.product}`,
+              hours: 5,
+              product: p.product
+            }))
           }
         ],
-        nextSteps: `Schedule a meeting with ${clientName} to discuss initial assessment within 2 weeks.`
+        nextSteps: `Schedule setup review with ${clientName} within 1 week.`
       };
     }
 
-    // Validate roadmap structure
     console.log('Validating roadmap structure');
     if (!roadmap.milestones || !Array.isArray(roadmap.milestones) || !roadmap.nextSteps) {
-      console.error('Invalid roadmap structure:', JSON.stringify(roadmap, null, 2));
+      console.error('Invalid roadmap structure:', roadmap);
       return {
         statusCode: 500,
         headers: corsHeaders,
-        body: JSON.stringify({ error: 'Invalid roadmap structure from API' })
+        body: JSON.stringify({ error: 'Invalid roadmap structure' })
       };
     }
-
-    // Ensure required fields
-    roadmap.milestones = roadmap.milestones.map(milestone => ({
-      ...milestone,
-      productsUsed: milestone.productsUsed && Array.isArray(milestone.productsUsed) ? milestone.productsUsed : products.map(p => p.product),
-      projectPlan: milestone.projectPlan && Array.isArray(milestone.projectPlan) ? milestone.projectPlan : products.flatMap(p => [
-        { task: `Assess ${p.product}`, timeline: 'Week 1-2', effortHours: 10, product: p.product, dependencies: p.product.includes('M365') || p.product.includes('Azure') || p.product.includes('Firewalls') || p.product.includes('Helpdesk') || p.product.includes('LAN') || p.product.includes('Servers') || p.product.includes('Cybersecurity') ? 'Licensing/hardware costs excluded' : 'None' },
-        { task: `Configure ${p.product}`, timeline: 'Week 3-4', effortHours: 15, product: p.product, dependencies: p.product.includes('M365') || p.product.includes('Azure') || p.product.includes('Firewalls') || p.product.includes('Helpdesk') || p.product.includes('LAN') || p.product.includes('Servers') || p.product.includes('Cybersecurity') ? 'Licensing/hardware costs excluded' : 'None' },
-        { task: `Train for ${p.product}`, timeline: 'Week 5-6', effortHours: 20, product: p.product, dependencies: 'None' }
-      ]),
-      bestPractices: milestone.bestPractices && Array.isArray(milestone.bestPractices) ? milestone.bestPractices : products.map(p => ({
-        product: p.product,
-        guideline: `Follow industry standards for ${p.product} deployment.`
-      })),
-      summaryTable: milestone.summaryTable && Array.isArray(milestone.summaryTable) ? milestone.summaryTable : products.flatMap(p => [
-        { task: `Assess ${p.product}`, hours: 10, product: p.product },
-        { task: `Configure ${p.product}`, hours: 15, product: p.product },
-        { task: `Train for ${p.product}`, hours: 20, product: p.product }
-      ])
-    }));
 
     console.log('Returning successful response');
     return {
