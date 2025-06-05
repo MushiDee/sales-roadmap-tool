@@ -54,54 +54,67 @@ exports.handler = async function(event, context) {
     `;
 
     console.log('Sending request to Grok API with key:', process.env.GROK_API_KEY.slice(0, 4) + '...');
-    const response = await fetch('https://api.x.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.GROK_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        messages: [
-          {
-            role: 'system',
-            content: 'You are Grok, a highly intelligent, helpful AI assistant.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        model: 'grok-3',
-        stream: false,
-        temperature: 0,
-        max_tokens: 1500
-      })
-    });
 
-    console.log('Grok API response status:', response.status, response.statusText);
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('Grok API error response:', errorText);
-      throw new Error(`Grok API request failed: ${response.status} - ${errorText}`);
-    }
+    // Set a timeout for the fetch request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second timeout
 
-    const apiResponse = await response.json();
-    console.log('Raw Grok API response:', apiResponse);
-
-    let roadmap;
     try {
-      roadmap = JSON.parse(apiResponse.choices[0].message.content);
-      console.log('Parsed roadmap:', roadmap);
-    } catch (e) {
-      console.error('API response content:', apiResponse.choices[0].message.content);
-      throw new Error(`Invalid JSON response from Grok API: ${e.message}`);
-    }
+      const response = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.GROK_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'system',
+              content: 'You are Grok, a highly intelligent, helpful AI assistant.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          model: 'grok-3',
+          stream: false,
+          temperature: 0,
+          max_tokens: 1000
+        }),
+        signal: controller.signal
+      });
 
-    return {
-      statusCode: 200,
-      headers: { 'Access-Control-Allow-Origin': 'https://mushidee.github.io' },
-      body: JSON.stringify({ roadmap })
-    };
+      clearTimeout(timeoutId);
+
+      console.log('Grok API response status:', response.status, response.statusText);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('Grok API error response:', errorText);
+        throw new Error(`Grok API request failed: ${response.status} - ${errorText}`);
+      }
+
+      const apiResponse = await response.json();
+      console.log('Raw Grok API response:', apiResponse);
+
+      let roadmap;
+      try {
+        roadmap = JSON.parse(apiResponse.choices[0].message.content);
+        console.log('Parsed roadmap:', roadmap);
+      } catch (e) {
+        console.error('API response content:', apiResponse.choices[0].message.content);
+        throw new Error(`Invalid JSON response from Grok API: ${e.message}`);
+      }
+
+      return {
+        statusCode: 200,
+        headers: { 'Access-Control-Allow-Origin': 'https://mushidee.github.io' },
+        body: JSON.stringify({ roadmap })
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
   } catch (error) {
     console.error('Function error:', error.message, error.stack);
     return {
