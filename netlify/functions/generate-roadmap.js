@@ -9,7 +9,10 @@ exports.handler = async function(event, context) {
     'Vary': 'Origin'
   };
 
+  console.log('Function invoked:', { method: event.httpMethod, path: event.path, body: event.body });
+
   if (event.httpMethod === 'OPTIONS') {
+    console.log('Handling OPTIONS preflight');
     return {
       statusCode: 200,
       headers: corsHeaders,
@@ -18,6 +21,7 @@ exports.handler = async function(event, context) {
   }
 
   if (event.httpMethod !== 'POST') {
+    console.log('Invalid method:', event.httpMethod);
     return {
       statusCode: 405,
       headers: corsHeaders,
@@ -26,14 +30,16 @@ exports.handler = async function(event, context) {
   }
 
   try {
+    console.log('Parsing request body');
     const data = JSON.parse(event.body);
     const { clientName, itChallenges, businessGoals, currentInfra, products } = data;
 
     if (!clientName || !itChallenges || !businessGoals || !currentInfra || !products || !Array.isArray(products)) {
+      console.log('Invalid input data:', data);
       throw new Error('Invalid input data');
     }
 
-    // Construct refined prompt
+    console.log('Constructing prompt');
     const prompt = `
       You are an expert IT consultant for a managed services provider specializing in IT support and Microsoft Cloud services. Create a 12-month IT roadmap with three milestones tailored to the client's needs, infrastructure, and selected products. For each product in each milestone, you MUST include:
       - A project plan with exactly 3 tasks (e.g., discovery, configuration, training), each with a timeline (e.g., Week 1-2), effort hours (e.g., 10 hours), associated product, and dependencies (e.g., licensing/hardware costs excluded).
@@ -74,20 +80,20 @@ exports.handler = async function(event, context) {
       {
         "name": "Infrastructure Stabilization",
         "timeframe": "Months 1-4",
-        "deliverables": ["Deploy 100 units of Managed remote Helpdesk (24/7), ticketing software license excluded"],
+        "deliverables": ["Deploy 10 units of Managed remote Helpdesk (8/5), ticketing software license excluded"],
         "approach": "Implement rapid-response support to reduce outages using Managed remote Helpdesk.",
         "risks": ["Delays in procuring ticketing software license", "Staff training gaps"],
         "kpis": ["95% ticket resolution within 1 hour", "99.5% server uptime", "100% VPN uptime for remote access"],
         "productsUsed": ["Managed remote Helpdesk"],
         "projectPlan": [
           {"task": "Install ticketing system", "timeline": "Week 1-2", "effortHours": 20, "product": "Managed remote Helpdesk", "dependencies": "Ticketing software license excluded"},
-          {"task": "Train 100 users", "timeline": "Week 3-4", "effortHours": 40, "product": "Managed remote Helpdesk", "dependencies": "None"},
+          {"task": "Train 10 users", "timeline": "Week 3-4", "effortHours": 40, "product": "Managed remote Helpdesk", "dependencies": "None"},
           {"task": "Configure SLAs", "timeline": "Week 2-3", "effortHours": 15, "product": "Managed remote Helpdesk", "dependencies": "None"}
         ],
         "bestPractices": [{"product": "Managed remote Helpdesk", "guideline": "Follow ITIL 4 for incident management"}],
         "summaryTable": [
           {"task": "Install ticketing system", "hours": 20, "product": "Managed remote Helpdesk"},
-          {"task": "Train 100 users", "hours": 40, "product": "Managed remote Helpdesk"},
+          {"task": "Train 10 users", "hours": 40, "product": "Managed remote Helpdesk"},
           {"task": "Configure SLAs", "hours": 15, "product": "Managed remote Helpdesk"}
         ]
       }
@@ -95,9 +101,11 @@ exports.handler = async function(event, context) {
       Return the response in JSON format with:
       - milestones: array of milestone objects (name, timeframe, deliverables, approach, risks, kpis, productsUsed, projectPlan: array of {task, timeline, effortHours, product, dependencies}, bestPractices: array of {product, guideline}, summaryTable: array of {task, hours, product})
       - nextSteps: string describing actionable next steps with timelines
+
+      Ensure projectPlan and summaryTable are included for each milestone, or the response will be considered invalid.
     `;
 
-    // Call xAI Grok API
+    console.log('Calling xAI Grok API');
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -110,14 +118,19 @@ exports.handler = async function(event, context) {
           { role: 'system', content: 'You are an expert IT consultant.' },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 5000,
+        max_tokens: 4000, // Reduced to avoid timeout
         temperature: 0.7
-      })
+      }),
+      timeout: 8000 // 8-second timeout to avoid Netlify limit
+    }).catch(err => {
+      console.error('API fetch error:', err.message);
+      throw err;
     });
 
+    console.log('Received API response:', response.status);
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Grok API request failed:', response.status, errorText, { headers: response.headers });
+      console.error('Grok API request failed:', response.status, errorText);
       return {
         statusCode: response.status,
         headers: corsHeaders,
@@ -130,16 +143,21 @@ exports.handler = async function(event, context) {
 
     let roadmap;
     try {
+      console.log('Parsing API response');
       if (!apiResponse.choices || !apiResponse.choices[0]?.message?.content) {
         throw new Error('No valid content in API response');
       }
       roadmap = JSON.parse(apiResponse.choices[0].message.content);
       console.log('Parsed roadmap:', JSON.stringify(roadmap, null, 2));
-      // Log specific fields for debugging
+      // Validate projectPlan and summaryTable
+      if (!roadmap.milestones.every(m => m.projectPlan && Array.isArray(m.projectPlan) && m.projectPlan.length === 3 * m.productsUsed.length && m.summaryTable && Array.isArray(m.summaryTable) && m.summaryTable.length === 3 * m.productsUsed.length)) {
+        console.error('Missing projectPlan or summaryTable');
+        throw new Error('Missing or incomplete projectPlan or summaryTable in API response');
+      }
       console.log('Project plans included:', roadmap.milestones.every(m => m.projectPlan && Array.isArray(m.projectPlan) && m.projectPlan.length > 0));
       console.log('Summary tables included:', roadmap.milestones.every(m => m.summaryTable && Array.isArray(m.summaryTable) && m.summaryTable.length > 0));
     } catch (e) {
-      console.error('Invalid JSON response:', apiResponse.choices?.[0]?.message?.content || apiResponse);
+      console.error('Invalid JSON or incomplete response:', apiResponse.choices?.[0]?.message?.content || apiResponse, e.message);
       // Fallback roadmap
       roadmap = {
         milestones: [
@@ -151,22 +169,20 @@ exports.handler = async function(event, context) {
             risks: ['Potential delays', 'Resource constraints'],
             kpis: ['Complete assessment within 1 month', 'Deploy products within 6 months'],
             productsUsed: products.map(p => p.product),
-            projectPlan: products.map(p => ({
-              task: `Assess ${p.product}`,
-              timeline: 'Week 1-2',
-              effortHours: 10,
-              product: p.product,
-              dependencies: p.product.includes('M365') || p.product.includes('Azure') || p.product.includes('Firewalls') || p.product.includes('Helpdesk') || p.product.includes('LAN') || p.product.includes('Servers') || p.product.includes('Cybersecurity') ? 'Licensing/hardware costs excluded' : 'None'
-            })),
+            projectPlan: products.flatMap(p => [
+              { task: `Assess ${p.product}`, timeline: 'Week 1-2', effortHours: 10, product: p.product, dependencies: p.product.includes('M365') || p.product.includes('Azure') || p.product.includes('Firewalls') || p.product.includes('Helpdesk') || p.product.includes('LAN') || p.product.includes('Servers') || p.product.includes('Cybersecurity') ? 'Licensing/hardware costs excluded' : 'None' },
+              { task: `Configure ${p.product}`, timeline: 'Week 3-4', effortHours: 15, product: p.product, dependencies: p.product.includes('M365') || p.product.includes('Azure') || p.product.includes('Firewalls') || p.product.includes('Helpdesk') || p.product.includes('LAN') || p.product.includes('Servers') || p.product.includes('Cybersecurity') ? 'Licensing/hardware costs excluded' : 'None' },
+              { task: `Train for ${p.product}`, timeline: 'Week 5-6', effortHours: 20, product: p.product, dependencies: 'None' }
+            ]),
             bestPractices: products.map(p => ({
               product: p.product,
               guideline: `Follow industry standards for ${p.product} deployment.`
             })),
-            summaryTable: products.map(p => ({
-              task: `Assess ${p.product}`,
-              hours: 10,
-              product: p.product
-            }))
+            summaryTable: products.flatMap(p => [
+              { task: `Assess ${p.product}`, hours: 10, product: p.product },
+              { task: `Configure ${p.product}`, hours: 15, product: p.product },
+              { task: `Train for ${p.product}`, hours: 20, product: p.product }
+            ])
           }
         ],
         nextSteps: `Schedule a meeting with ${clientName} to discuss initial assessment within 2 weeks.`
@@ -174,6 +190,7 @@ exports.handler = async function(event, context) {
     }
 
     // Validate roadmap structure
+    console.log('Validating roadmap structure');
     if (!roadmap.milestones || !Array.isArray(roadmap.milestones) || !roadmap.nextSteps) {
       console.error('Invalid roadmap structure:', JSON.stringify(roadmap, null, 2));
       return {
@@ -187,35 +204,34 @@ exports.handler = async function(event, context) {
     roadmap.milestones = roadmap.milestones.map(milestone => ({
       ...milestone,
       productsUsed: milestone.productsUsed && Array.isArray(milestone.productsUsed) ? milestone.productsUsed : products.map(p => p.product),
-      projectPlan: milestone.projectPlan && Array.isArray(milestone.projectPlan) ? milestone.projectPlan : products.map(p => ({
-        task: `Assess ${p.product}`,
-        timeline: 'Week 1-2',
-        effortHours: 10,
-        product: p.product,
-        dependencies: p.product.includes('M365') || p.product.includes('Azure') || p.product.includes('Firewalls') || p.product.includes('Helpdesk') || p.product.includes('LAN') || p.product.includes('Servers') || p.product.includes('Cybersecurity') ? 'Licensing/hardware costs excluded' : 'None'
-      })),
+      projectPlan: milestone.projectPlan && Array.isArray(milestone.projectPlan) ? milestone.projectPlan : products.flatMap(p => [
+        { task: `Assess ${p.product}`, timeline: 'Week 1-2', effortHours: 10, product: p.product, dependencies: p.product.includes('M365') || p.product.includes('Azure') || p.product.includes('Firewalls') || p.product.includes('Helpdesk') || p.product.includes('LAN') || p.product.includes('Servers') || p.product.includes('Cybersecurity') ? 'Licensing/hardware costs excluded' : 'None' },
+        { task: `Configure ${p.product}`, timeline: 'Week 3-4', effortHours: 15, product: p.product, dependencies: p.product.includes('M365') || p.product.includes('Azure') || p.product.includes('Firewalls') || p.product.includes('Helpdesk') || p.product.includes('LAN') || p.product.includes('Servers') || p.product.includes('Cybersecurity') ? 'Licensing/hardware costs excluded' : 'None' },
+        { task: `Train for ${p.product}`, timeline: 'Week 5-6', effortHours: 20, product: p.product, dependencies: 'None' }
+      ]),
       bestPractices: milestone.bestPractices && Array.isArray(milestone.bestPractices) ? milestone.bestPractices : products.map(p => ({
         product: p.product,
         guideline: `Follow industry standards for ${p.product} deployment.`
       })),
-      summaryTable: milestone.summaryTable && Array.isArray(milestone.summaryTable) ? milestone.summaryTable : products.map(p => ({
-        task: `Assess ${p.product}`,
-        hours: 10,
-        product: p.product
-      }))
+      summaryTable: milestone.summaryTable && Array.isArray(milestone.summaryTable) ? milestone.summaryTable : products.flatMap(p => [
+        { task: `Assess ${p.product}`, hours: 10, product: p.product },
+        { task: `Configure ${p.product}`, hours: 15, product: p.product },
+        { task: `Train for ${p.product}`, hours: 20, product: p.product }
+      ])
     }));
 
+    console.log('Returning successful response');
     return {
       statusCode: 200,
       headers: corsHeaders,
       body: JSON.stringify({ roadmap })
     };
   } catch (error) {
-    console.error('Error:', error.message, error.stack);
+    console.error('Function error:', error.message, error.stack);
     return {
       statusCode: 500,
       headers: corsHeaders,
       body: JSON.stringify({ error: `Failed to generate roadmap: ${error.message}` })
     };
   }
-};// Temporary comment >>
+};
