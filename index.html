@@ -48,44 +48,27 @@
     <style>
         .pdf-content {
             font-family: Arial, sans-serif;
-            font-size: 12pt;
+            font-size: 10pt;
             color: #000;
-            line-height: 1.4;
+            line-height: 1.3;
             width: 7.5in;
-            max-height: 9.5in;
-            overflow: hidden;
-            break-inside: avoid;
-            page-break-inside: avoid;
+            padding: 0.5in;
+            box-sizing: border-box;
         }
         .pdf-content h3, .pdf-content h4, .pdf-content h5 {
             font-weight: bold;
-            margin-top: 0.5em;
-            break-after: avoid;
-            page-break-after: avoid;
+            margin: 0.3em 0;
         }
         .pdf-content ul {
             list-style: disc;
             padding-left: 20px;
-            margin: 0.3em 0;
-            break-inside: avoid;
-            page-break-inside: avoid;
+            margin: 0.2em 0;
         }
         .pdf-content p {
-            margin: 0.3em 0;
-            break-inside: avoid;
-            page-break-inside: avoid;
+            margin: 0.2em 0;
         }
         .pdf-content div {
-            break-inside: avoid;
-            page-break-inside: avoid;
-        }
-        #pdfTempContainer {
-            position: absolute;
-            top: -9999px;
-            left: -9999px;
-            width: 7.5in;
-            max-height: 9.5in;
-            overflow: hidden;
+            margin-bottom: 0.3em;
         }
     </style>
 </head>
@@ -223,9 +206,6 @@
             <div id="roadmapContent" class="pdf-content"></div>
             <button onclick="downloadPDF()" class="mt-4 bg-blue-500 text-white mx-auto px-4 py-2 rounded hover:bg-blue-600">Download as PDF</button>
         </div>
-
-        <!-- Temporary container for PDF rendering -->
-        <div id="pdfTempContainer" class="pdf-content"></div>
     </div>
 
     <script>
@@ -293,7 +273,7 @@
             }
         }
 
-        // Add new product
+        // Add new product with validation
         function addProduct() {
             const newProduct = document.getElementById('newProduct').value.trim();
             if (newProduct && !additionalProducts.includes(newProduct) && !fixedProducts.includes(newProduct)) {
@@ -301,6 +281,8 @@
                 localStorage.setItem('additionalProducts', JSON.stringify(additionalProducts));
                 document.getElementById('newProduct').value = '';
                 populateProducts();
+            } else if (fixedProducts.includes(newProduct)) {
+                alert('This product is already a fixed Managed Service.');
             }
         }
 
@@ -425,31 +407,22 @@
             const sourceElement = document.getElementById('roadmapContent');
             console.log('Source content for PDF:', sourceElement.innerHTML);
 
-            // Clone content to temporary container
-            const tempContainer = document.getElementById('pdfTempContainer');
-            tempContainer.innerHTML = sourceElement.innerHTML;
-
             const opt = {
                 margin: [0.5, 0.5, 0.5, 0.5],
                 filename: 'Roadmap_Strategy.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-                pagebreak: { mode: ['css'], avoid: ['h3', 'h4', 'h5', 'ul', 'p', 'div'] }
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
 
             setTimeout(() => {
-                html2pdf().from(tempContainer).set(opt).outputPdf().then(pdf => {
-                    pdf.save();
-                    // Clear temporary container
-                    tempContainer.innerHTML = '';
-                    console.log('PDF generated successfully');
-                }).catch(err => {
+                html2pdf().from(sourceElement).set(opt).save().catch(err => {
                     console.error('PDF generation error:', err);
-                    tempContainer.innerHTML = '';
                     alert('Failed to generate PDF. Please try again.');
+                }).finally(() => {
+                    console.log('PDF generation attempt completed');
                 });
-            }, 500);
+            }, 1000);
         }
 
         // Initialize products
