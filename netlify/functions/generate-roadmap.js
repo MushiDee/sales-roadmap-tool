@@ -48,7 +48,7 @@ exports.handler = async function(event, context) {
       - Products and Quantities: ${products.map(p => `${p.product} (${p.quantity} units)`).join(', ')}
 
       Return JSON.stringify({
-        milestones: [{ name: string, timeframe: string, deliverables: string[], approach: string, risks: string[], kpis: string[] }, ...],
+        milestones: [{ name: string, timeframe: string, deliverables: [], approach: string, risks: [], kpis: [] }, ...],
         nextSteps: string
       }).
     `;
@@ -57,8 +57,9 @@ exports.handler = async function(event, context) {
 
     // Set a timeout for the fetch request
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 9000); // 9-second timeout
 
+    let roadmap;
     try {
       const response = await fetch('https://api.x.ai/v1/chat/completions', {
         method: 'POST',
@@ -80,7 +81,7 @@ exports.handler = async function(event, context) {
           model: 'grok-3',
           stream: false,
           temperature: 0,
-          max_tokens: 1000
+          max_tokens: 500
         }),
         signal: controller.signal
       });
@@ -97,7 +98,6 @@ exports.handler = async function(event, context) {
       const apiResponse = await response.json();
       console.log('Raw Grok API response:', apiResponse);
 
-      let roadmap;
       try {
         roadmap = JSON.parse(apiResponse.choices[0].message.content);
         console.log('Parsed roadmap:', roadmap);
@@ -105,16 +105,33 @@ exports.handler = async function(event, context) {
         console.error('API response content:', apiResponse.choices[0].message.content);
         throw new Error(`Invalid JSON response from Grok API: ${e.message}`);
       }
-
-      return {
-        statusCode: 200,
-        headers: { 'Access-Control-Allow-Origin': 'https://mushidee.github.io' },
-        body: JSON.stringify({ roadmap })
-      };
     } catch (error) {
       clearTimeout(timeoutId);
-      throw error;
+      if (error.name === 'AbortError') {
+        console.warn('API request timed out, returning fallback roadmap');
+        roadmap = {
+          milestones: [
+            {
+              name: 'Initial Assessment',
+              timeframe: 'Months 1-4',
+              deliverables: ['Basic IT assessment'],
+              approach: 'Conduct a review of current systems.',
+              risks: ['Potential delays due to data access'],
+              kpis: ['Assessment completed within 4 weeks']
+            }
+          ],
+          nextSteps: 'Contact support to finalize the roadmap due to API timeout.'
+        };
+      } else {
+        throw error;
+      }
     }
+
+    return {
+      statusCode: 200,
+      headers: { 'Access-Control-Allow-Origin': 'https://mushidee.github.io' },
+      body: JSON.stringify({ roadmap })
+    };
   } catch (error) {
     console.error('Function error:', error.message, error.stack);
     return {
