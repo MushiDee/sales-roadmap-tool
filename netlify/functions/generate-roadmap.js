@@ -2,23 +2,27 @@ const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
   const corsOrigin = 'https://mushidee.github.io';
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': corsOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Vary': 'Origin'
+  };
 
   if (event.httpMethod === 'OPTIONS') {
+    console.log('Handling OPTIONS request');
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': corsOrigin,
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      },
+      headers: corsHeaders,
       body: ''
     };
   }
 
   if (event.httpMethod !== 'POST') {
+    console.log('Invalid method:', event.httpMethod);
     return {
       statusCode: 405,
-      headers: { 'Access-Control-Allow-Origin': corsOrigin },
+      headers: corsHeaders,
       body: 'Method Not Allowed'
     };
   }
@@ -28,19 +32,21 @@ exports.handler = async function(event, context) {
     const { clientName, itChallenges, businessGoals, currentInfra, products } = data;
 
     if (!clientName || !itChallenges || !businessGoals || !currentInfra || !products || !Array.isArray(products)) {
+      console.log('Invalid input data:', data);
       throw new Error('Invalid input data');
     }
 
     // Construct refined prompt
     const prompt = `
-      You are an expert IT consultant for a managed services provider specializing in IT support and Microsoft Cloud services. Create a 12-month IT roadmap with three milestones tailored to the client's needs, infrastructure, and selected products. For each product in each milestone, MANDATORILY include:
-      - A project plan with 3-5 tasks (e.g., discovery, configuration, training), their timelines (e.g., Week 1-2), effort hours (e.g., 10 hours), and dependencies (e.g., licensing/hardware costs excluded).
+      You are an expert IT consultant for a managed services provider specializing in IT support and Microsoft Cloud services. Create a 12-month IT roadmap with three milestones tailored to the client's needs, infrastructure, and selected products. PRIORITIZE and MANDATORILY include for each product in each milestone:
+      - A project plan with 3-5 specific tasks (e.g., discovery, configuration, training), their timelines (e.g., Week 1-2), effort hours (e.g., 10 hours), and dependencies (e.g., licensing/hardware costs excluded).
       - A summary table listing each task, its hours, and associated product.
+      Additionally, include:
       - Specific response points detailing:
         - How the product addresses the client's IT challenges.
         - Its contribution to the client's business goals.
         - A deliverable tied to the product's quantity.
-      - Industry best practice guidelines for deploying and running the product (e.g., ITIL 4, NIST, Microsoft Zero Trust).
+      - Industry best practice guidelines for deploying and running each product (e.g., ITIL 4, NIST, Microsoft Zero Trust).
       Each milestone must include:
       - A unique name and timeframe (e.g., Months 1-4).
       - 3-5 deliverables, each referencing a product, its quantity, and any licensing/hardware exclusions.
@@ -113,7 +119,12 @@ exports.handler = async function(event, context) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Grok API request failed: ${response.status} - ${errorText}`);
+      console.error('Grok API request failed:', response.status, errorText);
+      return {
+        statusCode: response.status,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: `Grok API request failed: ${errorText}` })
+      };
     }
 
     const apiResponse = await response.json();
@@ -163,7 +174,12 @@ exports.handler = async function(event, context) {
 
     // Validate roadmap structure
     if (!roadmap.milestones || !Array.isArray(roadmap.milestones) || !roadmap.nextSteps) {
-      throw new Error('Invalid roadmap structure from API');
+      console.error('Invalid roadmap structure:', JSON.stringify(roadmap, null, 2));
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Invalid roadmap structure from API' })
+      };
     }
 
     // Ensure required fields
@@ -188,16 +204,17 @@ exports.handler = async function(event, context) {
       }))
     }));
 
+    console.log('Final roadmap response:', JSON.stringify(roadmap, null, 2));
     return {
       statusCode: 200,
-      headers: { 'Access-Control-Allow-Origin': corsOrigin },
+      headers: corsHeaders,
       body: JSON.stringify({ roadmap })
     };
   } catch (error) {
     console.error('Error:', error.message, error.stack);
     return {
       statusCode: 500,
-      headers: { 'Access-Control-Allow-Origin': corsOrigin },
+      headers: corsHeaders,
       body: JSON.stringify({ error: `Failed to generate roadmap: ${error.message}` })
     };
   }

@@ -1,8 +1,10 @@
 [build]
   functions = "netlify/functions"
-  publish = "."
-[functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["node-fetch"]
-[context.production]
-  environment = { NODE_VERSION = "18" }
+
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "https://mushidee.github.io"
+    Access-Control-Allow-Methods = "POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+    Vary = "Origin"

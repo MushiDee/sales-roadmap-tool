@@ -310,7 +310,7 @@
         function validateForm(formData) {
             let isValid = true;
             document.querySelectorAll('.error').forEach(error => error.classList.add('hidden'));
-            document.getElementById('productError').classList.add('hidden');
+            document.getElementById('productError').forEach(error => error.classList.add('hidden'));
 
             ['clientName', 'itChallenges', 'businessGoals', 'currentInfra'].forEach(field => {
                 if (!formData.get(field)) {
@@ -384,6 +384,12 @@
                 `;
 
                 roadmap.milestones.forEach((milestone, index) => {
+                    if (!milestone.projectPlan || milestone.projectPlan.length === 0) {
+                        console.warn(`Missing projectPlan for milestone ${index + 1}:`, milestone);
+                    }
+                    if (!milestone.summaryTable || milestone.summaryTable.length === 0) {
+                        console.warn(`Missing summaryTable for milestone ${index + 1}:`, milestone);
+                    }
                     roadmapContent += `
                         <div>
                             <h5>Milestone ${index + 1}: ${milestone.name} (${milestone.timeframe})</h5>
