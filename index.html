@@ -43,7 +43,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Roadmap Tool - JEC Technologies (Pty) Ltd</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
             font-family: Calibri, sans-serif;
@@ -316,6 +317,8 @@
     </div>
 
     <script>
+        const { jsPDF } = window.jspdf;
+
         // Preload logo image to avoid CORS issues
         function preloadImage(url) {
             return new Promise((resolve, reject) => {
@@ -606,35 +609,51 @@
         });
 
         // Download PDF
-        function downloadPDF() {
+        async function downloadPDF() {
             const sourceElement = document.getElementById('roadmapContent');
             console.log('Source content for PDF:', sourceElement.innerHTML);
 
-            const opt = {
-                margin: [0.5, 0.5, 0.5, 0.5],
-                filename: 'Roadmap_Strategy.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
-
             try {
                 console.log('Starting PDF generation...');
-                setTimeout(() => {
-                    html2pdf().from(sourceElement).set(opt).save().then(() => {
-                        console.log('PDF generated successfully');
-                    }).catch(err => {
-                        console.error('PDF generation error:', err);
-                        alert('Failed to generate PDF due to rendering issues. Please ensure all images load correctly or try again.');
+                setTimeout(async () => {
+                    const canvas = await html2canvas(sourceElement, {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true
                     });
-                }, 2000);
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF({
+                        orientation: 'portrait',
+                        unit: 'in',
+                        format: 'letter'
+                    });
+
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const pdfWidth = pdf.internal.pageSize.getWidth() - 1; // 1 inch margins
+                    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                    let heightLeft = pdfHeight;
+                    let position = 0.5; // Start at 0.5 inch from top
+
+                    pdf.addImage(imgData, 'PNG', 0.5, position, pdfWidth, pdfHeight);
+                    heightLeft -= pdf.internal.pageSize.getHeight() - 1; // Account for margins
+
+                    while (heightLeft > 0) {
+                        pdf.addPage();
+                        position = 0.5 - heightLeft;
+                        pdf.addImage(imgData, 'PNG', 0.5, position, pdfWidth, pdfHeight);
+                        heightLeft -= pdf.internal.pageSize.getHeight() - 1;
+                    }
+
+                    pdf.save('Roadmap_Strategy.pdf');
+                    console.log('PDF generated successfully');
+                }, 3000);
             } catch (err) {
-                console.error('PDF setup error:', err);
-                alert('Failed to setup PDF generation. Please try again.');
+                console.error('PDF generation error:', err);
+                alert('Failed to generate PDF due to rendering issues. Please try again.');
             }
         }
 
-        // Download Word (Manual .docx generation)
+        // Download Word (Simplified HTML export as .doc)
         function downloadWord() {
             const sourceElement = document.getElementById('roadmapContent');
             console.log('Source content for Word:', sourceElement.innerHTML);
@@ -648,13 +667,11 @@
             `;
             const content = header + sourceElement.innerHTML;
             const docContent = `
-                <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/1999/xhtml">
+                <!DOCTYPE html>
+                <html>
                 <head>
                     <meta charset="UTF-8">
-                    <meta name="ProgId" content="Word.Document">
-                    <meta name="Generator" content="Microsoft Word 15">
-                    <meta name="Originator" content="Microsoft Word 15">
+                    <title>IT Roadmap for ${clientName}</title>
                     <style>
                         body { font-family: Calibri, sans-serif; font-size: 11pt; color: #000; margin: 0.5in; }
                         h1 { font-size: 24pt; color: #003087; }
@@ -670,6 +687,8 @@
                         .header { font-size: 10pt; color: #666; text-align: right; }
                         .footer { font-size: 10pt; color: #666; text-align: center; border-top: 1px solid #ccc; padding-top: 10px; }
                         img { max-width: 200px; }
+                        .cover-page { text-align: center; margin-bottom: 40px; }
+                        .toc ul { list-style: none; padding: 0; }
                     </style>
                 </head>
                 <body>${content}</body>
@@ -678,11 +697,11 @@
 
             try {
                 console.log('Starting Word generation...');
-                const blob = new Blob([docContent], { type: 'application/vnd.ms-word' });
+                const blob = new Blob([docContent], { type: 'application/msword' });
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = 'Roadmap_Strategy.docx';
+                link.download = 'Roadmap_Strategy.doc';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
