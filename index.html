@@ -44,7 +44,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Roadmap Tool - JEC Technologies (Pty) Ltd</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html-docx-js-typescript@0.1.7/dist/html-docx.js"></script>
     <style>
         body {
             font-family: Calibri, sans-serif;
@@ -317,6 +316,17 @@
     </div>
 
     <script>
+        // Preload logo image to avoid CORS issues
+        function preloadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.src = url;
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+            });
+        }
+
         // Fixed Managed Services
         const fixedProducts = [
             "Managed Vendors",
@@ -462,11 +472,16 @@
                 const { roadmap } = await response.json();
                 console.log('AI-generated roadmap:', JSON.stringify(roadmap, null, 2));
 
+                // Preload logo image
+                const logoUrl = 'https://raw.githubusercontent.com/MushiDee/sales-roadmap-tool/main/images/logo.png';
+                await preloadImage(logoUrl).catch(err => {
+                    console.error('Failed to preload logo:', err);
+                });
+
                 const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
                 let roadmapContent = `
                     <div class="cover-page">
-                        <!-- Use the raw GitHub URL for the logo -->
-                        <img src="https://raw.githubusercontent.com/MushiDee/sales-roadmap-tool/main/images/logo.png" alt="JEC Technologies Logo" style="max-width: 200px;" onerror="this.src='https://via.placeholder.com/200x50.png?text=JEC+Technologies+Logo';">
+                        <img src="${logoUrl}" alt="JEC Technologies Logo" style="max-width: 200px;" onerror="this.src='https://via.placeholder.com/200x50.png?text=JEC+Technologies+Logo';">
                         <h1 style="font-size: 24pt;">IT Roadmap and Strategy</h1>
                         <p style="font-size: 14pt;">Prepared for ${data.clientName}</p>
                         <p>Prepared by: JEC Technologies (Pty) Ltd</p>
@@ -612,21 +627,15 @@
                         console.error('PDF generation error:', err);
                         alert('Failed to generate PDF due to rendering issues. Please ensure all images load correctly or try again.');
                     });
-                }, 1500);
+                }, 2000);
             } catch (err) {
                 console.error('PDF setup error:', err);
                 alert('Failed to setup PDF generation. Please try again.');
             }
         }
 
-        // Download Word
+        // Download Word (Manual .docx generation)
         function downloadWord() {
-            if (typeof htmlDocx === 'undefined') {
-                console.error('htmlDocx library not loaded');
-                alert('Word export library failed to load. Please try again or download as PDF.');
-                return;
-            }
-
             const sourceElement = document.getElementById('roadmapContent');
             console.log('Source content for Word:', sourceElement.innerHTML);
 
@@ -639,10 +648,13 @@
             `;
             const content = header + sourceElement.innerHTML;
             const docContent = `
-                <!DOCTYPE html>
-                <html>
+                <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/1999/xhtml">
                 <head>
                     <meta charset="UTF-8">
+                    <meta name="ProgId" content="Word.Document">
+                    <meta name="Generator" content="Microsoft Word 15">
+                    <meta name="Originator" content="Microsoft Word 15">
                     <style>
                         body { font-family: Calibri, sans-serif; font-size: 11pt; color: #000; margin: 0.5in; }
                         h1 { font-size: 24pt; color: #003087; }
@@ -657,6 +669,7 @@
                         th { background-color: #003087; color: #fff; }
                         .header { font-size: 10pt; color: #666; text-align: right; }
                         .footer { font-size: 10pt; color: #666; text-align: center; border-top: 1px solid #ccc; padding-top: 10px; }
+                        img { max-width: 200px; }
                     </style>
                 </head>
                 <body>${content}</body>
@@ -665,21 +678,19 @@
 
             try {
                 console.log('Starting Word generation...');
-                setTimeout(() => {
-                    const converted = htmlDocx.asBlob(docContent);
-                    const url = window.URL.createObjectURL(converted);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = 'Roadmap_Strategy.docx';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-                    console.log('Word document generated successfully');
-                }, 1000);
+                const blob = new Blob([docContent], { type: 'application/vnd.ms-word' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'Roadmap_Strategy.docx';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                console.log('Word document generated successfully');
             } catch (err) {
                 console.error('Word generation error:', err);
-                alert('Failed to generate Word document. Please try again.');
+                alert('Failed to generate Word document. Please try again or download as PDF.');
             }
         }
 
