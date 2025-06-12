@@ -77,7 +77,6 @@
         .cover-page {
             text-align: center;
             margin-bottom: 40px;
-            page-break-after: always;
         }
         .cover-page img {
             max-width: 200px;
@@ -95,7 +94,6 @@
         }
         .toc {
             margin-bottom: 40px;
-            page-break-after: always;
         }
         .toc h2 {
             font-size: 14pt;
@@ -188,7 +186,7 @@
             <p>1. Add or remove additional products in the "Manage Additional Products" section.<br>
                2. Fill out the client form, select products, and specify quantities.<br>
                3. Click "Generate Roadmap" to create a plan.<br>
-               4. Review and download as PDF or Word for client sharing.</p>
+               4. Review and download as PDF or HTML (open in Word and save as .docx).</p>
         </div>
 
         <!-- Product Management Section -->
@@ -238,10 +236,10 @@
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <label style="display: flex; align-items: center;">
-                                <input type="checkbox" name="products" value="Managed remote Helpdesk" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
-                                Managed remote Helpdesk
+                                <input type="checkbox" name="products" value="Managed Remote Helpdesk (per user)" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
+                                Managed Remote Helpdesk (per user)
                             </label>
-                            <input type="number" name="quantity_Managed remote Helpdesk" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed Remote Helpdesk (per user)" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <label style="display: flex; align-items: center;">
@@ -252,17 +250,17 @@
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <label style="display: flex; align-items: center;">
-                                <input type="checkbox" name="products" value="Managed M365 instance" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
-                                Managed M365 instance
+                                <input type="checkbox" name="products" value="Managed M365 instance (per user)" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
+                                Managed M365 instance (per user)
                             </label>
-                            <input type="number" name="quantity_Managed M365 instance" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed M365 instance (per user)" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <label style="display: flex; align-items: center;">
-                                <input type="checkbox" name="products" value="Managed Local Area network service" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
-                                Managed Local Area network service
+                                <input type="checkbox" name="products" value="Managed Local Area Network Devices" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
+                                Managed Local Area Network Devices
                             </label>
-                            <input type="number" name="quantity_Managed Local Area network service" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed Local Area Network Devices" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <label style="display: flex; align-items: center;">
@@ -280,17 +278,17 @@
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <label style="display: flex; align-items: center;">
-                                <input type="checkbox" name="products" value="Managed Azure IaaS service" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
-                                Managed Azure IaaS service
+                                <input type="checkbox" name="products" value="Managed Azure IaaS service (per Instance)" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
+                                Managed Azure IaaS service (per Instance)
                             </label>
-                            <input type="number" name="quantity_Managed Azure IaaS service" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed Azure IaaS service (per Instance)" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <label style="display: flex; align-items: center;">
-                                <input type="checkbox" name="products" value="Managed Cybersecurity & SOC service" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
-                                Managed Cybersecurity & SOC service
+                                <input type="checkbox" name="products" value="Managed Cybersecurity & SOC service (per user)" style="margin-right: 8px;" onchange="toggleQuantityInput(this)">
+                                Managed Cybersecurity & SOC service (per user)
                             </label>
-                            <input type="number" name="quantity_Managed Cybersecurity & SOC service" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
+                            <input type="number" name="quantity_Managed Cybersecurity & SOC service (per user)" class="quantity-input" style="width: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; display: none;" placeholder="Qty" min="1" disabled>
                         </div>
                     </div>
                     <p id="productError" style="color: red; font-size: 10pt; display: none;">Please select at least one product and specify quantities.</p>
@@ -311,7 +309,7 @@
             <div id="roadmapContent" class="doc-content"></div>
             <div style="margin-top: 20px;">
                 <button onclick="downloadPDF()" class="button">Download as PDF</button>
-                <button onclick="downloadWord()" class="button">Download as Word</button>
+                <button onclick="downloadWord()" class="button">Download as HTML (Open in Word)</button>
             </div>
         </div>
     </div>
@@ -333,14 +331,14 @@
         // Fixed Managed Services
         const fixedProducts = [
             "Managed Vendors",
-            "Managed remote Helpdesk",
+            "Managed Remote Helpdesk (per user)",
             "Managed Onsite Support technician (in hours)",
-            "Managed M365 instance",
-            "Managed Local Area network service",
+            "Managed M365 instance (per user)",
+            "Managed Local Area Network Devices",
             "Managed Servers",
             "Managed Firewalls",
-            "Managed Azure IaaS service",
-            "Managed Cybersecurity & SOC service"
+            "Managed Azure IaaS service (per Instance)",
+            "Managed Cybersecurity & SOC service (per user)"
         ];
 
         // Additional products
@@ -566,21 +564,6 @@
                             <ul style="padding-left: 20px;">
                                 ${milestone.kpis.map(k => `<li>${k}</li>`).join('')}
                             </ul>
-                            <h4 style="font-size: 11pt;">Effort Summary</h4>
-                            <table style="width: 100%; border-collapse: collapse;">
-                                <tr>
-                                    <th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Task</th>
-                                    <th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Hours</th>
-                                    <th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Product</th>
-                                </tr>
-                                ${milestone.summaryTable ? milestone.summaryTable.map(t => `
-                                    <tr>
-                                        <td style="border: 1px solid #ccc; padding: 8px;">${t.task}</td>
-                                        <td style="border: 1px solid #ccc; padding: 8px;">${t.hours}</td>
-                                        <td style="border: 1px solid #ccc; padding: 8px;">${t.product}</td>
-                                    </tr>
-                                `).join('') : '<tr><td colspan="3" style="border: 1px solid #ccc; padding: 8px;">No effort summary provided</td></tr>'}
-                            </table>
                         </div>
                     `;
                 });
@@ -619,8 +602,13 @@
                     const canvas = await html2canvas(sourceElement, {
                         scale: 2,
                         useCORS: true,
-                        allowTaint: true
+                        allowTaint: true,
+                        windowHeight: sourceElement.scrollHeight
                     });
+                    console.log('Canvas dimensions:', canvas.width, canvas.height);
+                    if (canvas.width === 0 || canvas.height === 0) {
+                        throw new Error('Canvas rendering produced an empty result');
+                    }
                     const imgData = canvas.toDataURL('image/png');
                     const pdf = new jsPDF({
                         orientation: 'portrait',
@@ -639,21 +627,21 @@
 
                     while (heightLeft > 0) {
                         pdf.addPage();
-                        position = 0.5 - heightLeft;
+                        position = 0.5 - (pdfHeight - heightLeft);
                         pdf.addImage(imgData, 'PNG', 0.5, position, pdfWidth, pdfHeight);
                         heightLeft -= pdf.internal.pageSize.getHeight() - 1;
                     }
 
                     pdf.save('Roadmap_Strategy.pdf');
                     console.log('PDF generated successfully');
-                }, 3000);
+                }, 4000);
             } catch (err) {
                 console.error('PDF generation error:', err);
                 alert('Failed to generate PDF due to rendering issues. Please try again.');
             }
         }
 
-        // Download Word (Simplified HTML export as .doc)
+        // Download Word (Simplified HTML export as .html for Word)
         function downloadWord() {
             const sourceElement = document.getElementById('roadmapContent');
             console.log('Source content for Word:', sourceElement.innerHTML);
@@ -666,6 +654,12 @@
                 </div>
             `;
             const content = header + sourceElement.innerHTML;
+            const escapedContent = content
+                .replace(/&/g, '&')
+                .replace(/</g, '<')
+                .replace(/>/g, '>')
+                .replace(/"/g, '"')
+                .replace(/'/g, ''');
             const docContent = `
                 <!DOCTYPE html>
                 <html>
@@ -691,22 +685,23 @@
                         .toc ul { list-style: none; padding: 0; }
                     </style>
                 </head>
-                <body>${content}</body>
+                <body>${escapedContent}</body>
                 </html>
             `;
 
             try {
                 console.log('Starting Word generation...');
-                const blob = new Blob([docContent], { type: 'application/msword' });
+                const blob = new Blob([docContent], { type: 'text/html' });
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = 'Roadmap_Strategy.doc';
+                link.download = 'Roadmap_Strategy.html';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
                 console.log('Word document generated successfully');
+                alert('HTML file generated. Open in Microsoft Word and save as .docx for best results.');
             } catch (err) {
                 console.error('Word generation error:', err);
                 alert('Failed to generate Word document. Please try again or download as PDF.');

@@ -42,7 +42,7 @@ exports.handler = async function(event, context) {
     console.log('Constructing detailed prompt');
     const prompt = `
       You are an expert IT consultant for JEC Technologies (Pty) Ltd, specializing in managed IT services and Microsoft Cloud solutions. Create a 12-month IT roadmap with three milestones tailored to the client's specific needs, infrastructure, and selected products, addressing their unique challenges and goals. For each product in each milestone, include:
-      - A project plan with 3 tasks per product, each tailored to the client's IT challenges (e.g., server dependency, connectivity issues) and aligned with industry best practices for deployment (e.g., ITIL 4 for Managed remote Helpdesk, NIST for Managed Cybersecurity & SOC service, Microsoft Zero Trust for Managed M365 instance). Tasks must include:
+      - A project plan with 3 tasks per product, each tailored to the client's IT challenges (e.g., server dependency, connectivity issues) and aligned with industry best practices for deployment (e.g., ITIL 4 for Managed Remote Helpdesk (per user), NIST for Managed Cybersecurity & SOC service (per user), Microsoft Zero Trust for Managed M365 instance (per user)). Tasks must include:
         - A specific action (e.g., "Implement daily backups" for Managed Servers, "Configure intrusion detection" for Managed Firewalls).
         - A timeline (e.g., Weeks 1-2).
         - Effort hours (e.g., 10-20 hours) based on product complexity and client scale.
@@ -51,22 +51,22 @@ exports.handler = async function(event, context) {
       - One industry best practice guideline per product (e.g., ITIL 4, NIST, Microsoft Zero Trust).
       Each milestone must include:
       - A unique name and timeframe (e.g., Months 1-4).
-      - 2-3 deliverables tied to product quantities and client needs (e.g., "Deploy 15 units of Managed remote Helpdesk with 8/5 support").
+      - 2-3 deliverables tied to product quantities and client needs (e.g., "Deploy 15 units of Managed Remote Helpdesk (per user) with 8/5 support").
       - An approach in clear, non-technical language, linking tasks to client challenges and goals.
       - 2 risks specific to the client's infrastructure or product deployment.
       - 3 measurable KPIs tailored to the client's scale and outcomes (e.g., "95% ticket resolution within 1 hour").
-      For Managed remote Helpdesk, specify 8/5 or 24/7 service based on client needs (e.g., 24/7 for critical systems). Provide 2-3 next steps with timelines (e.g., within 2 weeks) and product-specific actions. Use exact product names and ensure the roadmap is professional, client-centric, and jargon-free.
+      For Managed Remote Helpdesk (per user), specify 8/5 or 24/7 service based on client needs (e.g., 24/7 for critical systems). Provide 2-3 next steps with timelines (e.g., within 2 weeks) and product-specific actions. Use exact product names and ensure the roadmap is professional, client-centric, and jargon-free.
 
       Service Context (abridged):
       - Managed Vendors: Coordinates vendors, no licensing costs.
-      - Managed remote Helpdesk: 8/5 support (24/7 optional), ticketing license excluded.
+      - Managed Remote Helpdesk (per user): 8/5 support (24/7 optional), ticketing license excluded.
       - Managed Onsite Support technician (in hours): Hourly on-site support, no licensing.
-      - Managed M365 instance: Manages M365 tenants, licenses excluded.
-      - Managed Local Area network service: Monitors LAN, hardware/licenses excluded.
+      - Managed M365 instance (per user): Manages M365 tenants, licenses excluded.
+      - Managed Local Area Network Devices: Monitors LAN devices, hardware/licenses excluded.
       - Managed Servers: Manages servers, hardware/OS licenses excluded.
       - Managed Firewalls: Configures firewalls, hardware/licenses excluded.
-      - Managed Azure IaaS service: Deploys Azure infrastructure, subscription costs excluded.
-      - Managed Cybersecurity & SOC service: 24/7 monitoring, security tool licenses excluded.
+      - Managed Azure IaaS service (per Instance): Deploys Azure infrastructure, subscription costs excluded.
+      - Managed Cybersecurity & SOC service (per user): 24/7 monitoring, security tool licenses excluded.
 
       Client Information:
       - Name: ${clientName}
@@ -115,7 +115,7 @@ exports.handler = async function(event, context) {
         body: JSON.stringify({
           model: 'grok-3',
           messages: [{ role: 'user', content: prompt }],
-          max_tokens: 1200,
+          max_tokens: 1000,
           temperature: 0.7
         }),
         timeout: 7000 // 7-second timeout
@@ -149,7 +149,7 @@ exports.handler = async function(event, context) {
           {
             name: "Optimization and Expansion",
             timeframe: "Months 5-8",
-            deliverables: ["Optimize 15 units of Managed remote Helpdesk", "Enhance 10 units of Managed Local Area network service"],
+            deliverables: ["Optimize 15 units of Managed Remote Helpdesk (per user)", "Enhance 10 units of Managed Local Area Network Devices"],
             approach: "Optimize existing systems and expand capabilities to improve performance and support growing needs.",
             risks: ["User adoption delays", "Network configuration errors"],
             kpis: ["95% system uptime", "80% user adoption rate", "20% performance improvement"],
@@ -170,7 +170,7 @@ exports.handler = async function(event, context) {
           {
             name: "Full Integration and Migration",
             timeframe: "Months 9-12",
-            deliverables: ["Integrate 1 unit of Managed Azure IaaS service", "Migrate 4TB data to cloud"],
+            deliverables: ["Integrate 1 unit of Managed Azure IaaS service (per Instance)", "Migrate 4TB data to cloud"],
             approach: "Complete integration and initiate cloud migration to achieve long-term scalability and accessibility goals.",
             risks: ["Data migration failures", "Downtime during transition"],
             kpis: ["99% system uptime", "100% user training completion", "90% migration success"],
