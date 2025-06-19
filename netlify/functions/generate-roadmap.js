@@ -41,21 +41,18 @@ exports.handler = async function(event, context) {
 
     console.log('Constructing detailed prompt');
     const prompt = `
-      You are an expert IT consultant for JEC Technologies (Pty) Ltd, specializing in managed IT services and Microsoft Cloud solutions. Create a 12-month IT roadmap with three milestones tailored to the client's specific needs, infrastructure, and selected products, addressing their unique challenges and goals. For each product in each milestone, include:
-      - A project plan with 3 tasks per product, each tailored to the client's IT challenges (e.g., server dependency, connectivity issues) and aligned with industry best practices for deployment (e.g., ITIL 4 for Managed Remote Helpdesk (per user), NIST for Managed Cybersecurity & SOC service (per user), Microsoft Zero Trust for Managed M365 instance (per user)). Tasks must include:
-        - A specific action (e.g., "Implement daily backups" for Managed Servers, "Configure intrusion detection" for Managed Firewalls).
-        - A timeline (e.g., Weeks 1-2).
-        - Effort hours (e.g., 10-20 hours) based on product complexity and client scale.
-        - Product name and dependencies (e.g., licensing/hardware excluded).
-      - Response points detailing how each task addresses the client's challenges and contributes to their goals.
-      - One industry best practice guideline per product (e.g., ITIL 4, NIST, Microsoft Zero Trust).
+      You are an expert IT consultant for JEC Technologies (Pty) Ltd, specializing in managed IT services and Microsoft Cloud solutions. Create a 12-month IT roadmap with three milestones tailored to the client's specific needs, infrastructure, and selected products, addressing their unique challenges and goals. For each product in each milestone, break the implementation into 3-4 distinct phases (e.g., Planning, Deployment, Training, Review) with 3-5 specific, actionable subtasks per phase that the project team can follow. Ensure tasks are customized to the client's context (e.g., for 15 users on Managed Remote Helpdesk, include user-specific onboarding steps) and aligned with industry best practices (e.g., ITIL 4 for Managed Remote Helpdesk, NIST for Managed Cybersecurity & SOC service, Microsoft Zero Trust for Managed M365 instance). Each subtask must include:
+      - A detailed action (e.g., "Confirm user list and contact details for 15 users" for Managed Remote Helpdesk, "Implement daily backups for 4TB server" for Managed Servers).
+      - An approximate timeline (e.g., Week 1-2, Month 1).
+      - Effort hours (e.g., 5-20 hours) based on product complexity and client scale.
+      - Product name and dependencies (e.g., licensing/hardware excluded where applicable).
       Each milestone must include:
       - A unique name and timeframe (e.g., Months 1-4).
       - 2-3 deliverables tied to product quantities and client needs (e.g., "Deploy 15 units of Managed Remote Helpdesk (per user) with 8/5 support").
       - An approach in clear, non-technical language, linking tasks to client challenges and goals.
       - 2 risks specific to the client's infrastructure or product deployment.
       - 3 measurable KPIs tailored to the client's scale and outcomes (e.g., "95% ticket resolution within 1 hour").
-      For Managed Remote Helpdesk (per user), specify 8/5 or 24/7 service based on client needs (e.g., 24/7 for critical systems). Provide 2-3 next steps with timelines (e.g., within 2 weeks) and product-specific actions. Use exact product names and ensure the roadmap is professional, client-centric, and jargon-free.
+      For Managed Remote Helpdesk (per user), specify 8/5 or 24/7 service based on client needs (e.g., 24/7 for critical systems). Provide 2-3 next steps with timelines (e.g., within 2 weeks) and product-specific actions.
 
       Service Context (abridged):
       - Managed Vendors: Coordinates vendors, no licensing costs.
@@ -85,9 +82,22 @@ exports.handler = async function(event, context) {
         "kpis": ["99.9% server uptime", "100% backup completion daily", "Zero security breaches"],
         "productsUsed": ["Managed Servers", "Managed Firewalls"],
         "projectPlan": [
-          {"task": "Implement daily backups for 4TB server", "timeline": "Weeks 1-2", "effortHours": 15, "product": "Managed Servers", "dependencies": "Hardware excluded"},
-          {"task": "Configure intrusion detection system", "timeline": "Weeks 3-4", "effortHours": 20, "product": "Managed Firewalls", "dependencies": "Licensing excluded"},
-          {"task": "Train staff on backup procedures", "timeline": "Weeks 5-6", "effortHours": 10, "product": "Managed Servers", "dependencies": "None"}
+          {
+            "phase": "Planning",
+            "subtasks": [
+              {"task": "Confirm server specifications and backup requirements for 4TB data", "timeline": "Week 1", "effortHours": 8, "product": "Managed Servers", "dependencies": "Hardware excluded"},
+              {"task": "Identify firewall deployment locations", "timeline": "Week 1-2", "effortHours": 6, "product": "Managed Firewalls", "dependencies": "Licensing excluded"},
+              {"task": "Draft change control plan", "timeline": "Week 2", "effortHours": 5, "product": "Managed Servers", "dependencies": "IT policy approval"}
+            ]
+          },
+          {
+            "phase": "Deployment",
+            "subtasks": [
+              {"task": "Implement daily backups for 4TB server", "timeline": "Weeks 3-4", "effortHours": 15, "product": "Managed Servers", "dependencies": "None"},
+              {"task": "Configure intrusion detection system", "timeline": "Weeks 3-4", "effortHours": 12, "product": "Managed Firewalls", "dependencies": "None"},
+              {"task": "Test backup and firewall integration", "timeline": "Week 5", "effortHours": 10, "product": "Managed Servers", "dependencies": "Firewall setup"}
+            ]
+          }
         ],
         "bestPractices": [
           {"product": "Managed Servers", "guideline": "Follow ITIL 4 for backup management"},
@@ -96,10 +106,10 @@ exports.handler = async function(event, context) {
       }
 
       Return JSON with:
-      - milestones: array of milestone objects (name, timeframe, deliverables, approach, risks, kpis, productsUsed, projectPlan, bestPractices)
+      - milestones: array of milestone objects (name, timeframe, deliverables, approach, risks, kpis, productsUsed, projectPlan with phases and subtasks, bestPractices)
       - nextSteps: string
 
-      Ensure projectPlan includes 3 specific tasks per product per milestone, aligned with best practices and client needs, and do not include a summaryTable.
+      Ensure projectPlan includes 3-4 phases per product per milestone, with 3-5 detailed subtasks per phase, aligned with best practices and client needs, and do not include a summaryTable.
     `;
 
     console.log('Calling xAI Grok API');
@@ -134,9 +144,22 @@ exports.handler = async function(event, context) {
             kpis: ["99.9% server uptime", "100% daily backup success", "Zero unauthorized access"],
             productsUsed: products.map(p => p.product),
             projectPlan: products.flatMap(p => [
-              { task: `Assess ${p.product} for ${clientName}'s ${currentInfra.includes('server') ? 'server' : 'network'} needs`, timeline: "Weeks 1-2", effortHours: 10, product: p.product, dependencies: p.product.includes('Helpdesk') || p.product.includes('M365') || p.product.includes('Servers') || p.product.includes('Firewalls') || p.product.includes('Azure') || p.product.includes('Cybersecurity') || p.product.includes('LAN') ? 'Licensing/hardware excluded' : 'None' },
-              { task: `Configure ${p.product} per best practices`, timeline: "Weeks 3-4", effortHours: 15, product: p.product, dependencies: p.product.includes('Helpdesk') || p.product.includes('M365') || p.product.includes('Servers') || p.product.includes('Firewalls') || p.product.includes('Azure') || p.product.includes('Cybersecurity') || p.product.includes('LAN') ? 'Licensing/hardware excluded' : 'None' },
-              { task: `Train staff on ${p.product} usage`, timeline: "Weeks 5-6", effortHours: 10, product: p.product, dependencies: 'None' }
+              {
+                phase: "Planning",
+                subtasks: [
+                  { task: `Confirm ${p.product} requirements for ${clientName}'s ${currentInfra.includes('server') ? 'server' : 'network'}`, timeline: "Week 1", effortHours: 8, product: p.product, dependencies: p.product.includes('Helpdesk') || p.product.includes('M365') || p.product.includes('Servers') || p.product.includes('Firewalls') || p.product.includes('Azure') || p.product.includes('Cybersecurity') || p.product.includes('LAN') ? 'Licensing/hardware excluded' : 'None' },
+                  { task: `Draft deployment plan for ${p.product}`, timeline: "Week 1-2", effortHours: 6, product: p.product, dependencies: 'Client input' },
+                  { task: `Prepare change control documentation`, timeline: "Week 2", effortHours: 5, product: p.product, dependencies: 'IT policy approval' }
+                ]
+              },
+              {
+                phase: "Deployment",
+                subtasks: [
+                  { task: `Install and configure ${p.product}`, timeline: "Weeks 3-4", effortHours: 12, product: p.product, dependencies: 'None' },
+                  { task: `Test ${p.product} functionality`, timeline: "Week 5", effortHours: 8, product: p.product, dependencies: 'Configuration complete' },
+                  { task: `Roll out ${p.product} to initial users`, timeline: "Week 6", effortHours: 6, product: p.product, dependencies: 'Testing approval' }
+                ]
+              }
             ]),
             bestPractices: products.map(p => ({
               product: p.product,
@@ -155,9 +178,21 @@ exports.handler = async function(event, context) {
             kpis: ["95% system uptime", "80% user adoption rate", "20% performance improvement"],
             productsUsed: products.map(p => p.product),
             projectPlan: products.flatMap(p => [
-              { task: `Monitor ${p.product} performance`, timeline: "Weeks 1-2", effortHours: 8, product: p.product, dependencies: 'None' },
-              { task: `Tune ${p.product} settings`, timeline: "Weeks 3-4", effortHours: 12, product: p.product, dependencies: 'None' },
-              { task: `Validate ${p.product} enhancements`, timeline: "Weeks 5-6", effortHours: 8, product: p.product, dependencies: 'None' }
+              {
+                phase: "Optimization",
+                subtasks: [
+                  { task: `Monitor ${p.product} performance metrics`, timeline: "Weeks 1-2", effortHours: 6, product: p.product, dependencies: 'None' },
+                  { task: `Adjust ${p.product} settings for efficiency`, timeline: "Weeks 3-4", effortHours: 8, product: p.product, dependencies: 'Monitoring data' },
+                  { task: `Validate optimization results`, timeline: "Week 5", effortHours: 5, product: p.product, dependencies: 'Adjustments complete' }
+                ]
+              },
+              {
+                phase: "Expansion",
+                subtasks: [
+                  { task: `Plan expansion for ${p.product}`, timeline: "Week 6", effortHours: 6, product: p.product, dependencies: 'Client approval' },
+                  { task: `Deploy additional ${p.product} units`, timeline: "Weeks 7-8", effortHours: 10, product: p.product, dependencies: 'None' }
+                ]
+              }
             ]),
             bestPractices: products.map(p => ({
               product: p.product,
@@ -176,9 +211,21 @@ exports.handler = async function(event, context) {
             kpis: ["99% system uptime", "100% user training completion", "90% migration success"],
             productsUsed: products.map(p => p.product),
             projectPlan: products.flatMap(p => [
-              { task: `Integrate ${p.product} with existing systems`, timeline: "Weeks 1-2", effortHours: 15, product: p.product, dependencies: p.product.includes('Azure') ? 'Subscription costs excluded' : 'None' },
-              { task: `Test ${p.product} functionality`, timeline: "Weeks 3-4", effortHours: 10, product: p.product, dependencies: 'None' },
-              { task: `Roll out ${p.product} to all users`, timeline: "Weeks 5-6", effortHours: 10, product: p.product, dependencies: 'None' }
+              {
+                phase: "Integration",
+                subtasks: [
+                  { task: `Integrate ${p.product} with existing systems`, timeline: "Weeks 1-2", effortHours: 12, product: p.product, dependencies: p.product.includes('Azure') ? 'Subscription costs excluded' : 'None' },
+                  { task: `Test ${p.product} integration`, timeline: "Weeks 3-4", effortHours: 8, product: p.product, dependencies: 'Integration complete' },
+                  { task: `Document ${p.product} integration process`, timeline: "Week 5", effortHours: 6, product: p.product, dependencies: 'Testing approval' }
+                ]
+              },
+              {
+                phase: "Migration",
+                subtasks: [
+                  { task: `Plan 4TB data migration to ${p.product}`, timeline: "Week 6", effortHours: 10, product: p.product, dependencies: 'Client approval' },
+                  { task: `Execute data migration`, timeline: "Weeks 7-10", effortHours: 20, product: p.product, dependencies: 'Integration complete' }
+                ]
+              }
             ]),
             bestPractices: products.map(p => ({
               product: p.product,
@@ -220,11 +267,11 @@ exports.handler = async function(event, context) {
       }
       roadmap = JSON.parse(apiResponseData.choices[0].message.content);
       console.log('Parsed roadmap objects:', roadmap.milestones?.length || 0);
-      if (!roadmap.milestones.every(m => m.projectPlan && Array.isArray(m.projectPlan) && m.projectPlan.length >= 3 * products.length)) {
-        console.error('Missing or insufficient projectPlan');
-        throw new Error('Missing or incomplete projectPlan in API response');
+      if (!roadmap.milestones.every(m => m.projectPlan && Array.isArray(m.projectPlan) && m.projectPlan.every(p => p.subtasks && Array.isArray(p.subtasks) && p.subtasks.length >= 3))) {
+        console.error('Missing or insufficient projectPlan with subtasks');
+        throw new Error('Missing or incomplete projectPlan with subtasks in API response');
       }
-      console.log('Project plans included:', roadmap.milestones.every(m => m.projectPlan?.length > 0));
+      console.log('Project plans with subtasks included:', roadmap.milestones.every(m => m.projectPlan?.every(p => p.subtasks?.length > 0)));
     } catch (e) {
       console.error('Invalid JSON or incomplete response:', apiResponseData.choices?.[0]?.message?.content || '', e.message);
       roadmap = {
@@ -238,9 +285,22 @@ exports.handler = async function(event, context) {
             kpis: ["99.9% server uptime", "100% daily backup success", "Zero unauthorized access"],
             productsUsed: products.map(p => p.product),
             projectPlan: products.flatMap(p => [
-              { task: `Assess ${p.product} for ${clientName}'s ${currentInfra.includes('server') ? 'server' : 'network'} needs`, timeline: "Weeks 1-2", effortHours: 10, product: p.product, dependencies: p.product.includes('Helpdesk') || p.product.includes('M365') || p.product.includes('Servers') || p.product.includes('Firewalls') || p.product.includes('Azure') || p.product.includes('Cybersecurity') || p.product.includes('LAN') ? 'Licensing/hardware excluded' : 'None' },
-              { task: `Configure ${p.product} per best practices`, timeline: "Weeks 3-4", effortHours: 15, product: p.product, dependencies: p.product.includes('Helpdesk') || p.product.includes('M365') || p.product.includes('Servers') || p.product.includes('Firewalls') || p.product.includes('Azure') || p.product.includes('Cybersecurity') || p.product.includes('LAN') ? 'Licensing/hardware excluded' : 'None' },
-              { task: `Train staff on ${p.product} usage`, timeline: "Weeks 5-6", effortHours: 10, product: p.product, dependencies: 'None' }
+              {
+                phase: "Planning",
+                subtasks: [
+                  { task: `Confirm ${p.product} requirements for ${clientName}'s ${currentInfra.includes('server') ? 'server' : 'network'}`, timeline: "Week 1", effortHours: 8, product: p.product, dependencies: p.product.includes('Helpdesk') || p.product.includes('M365') || p.product.includes('Servers') || p.product.includes('Firewalls') || p.product.includes('Azure') || p.product.includes('Cybersecurity') || p.product.includes('LAN') ? 'Licensing/hardware excluded' : 'None' },
+                  { task: `Draft deployment plan for ${p.product}`, timeline: "Week 1-2", effortHours: 6, product: p.product, dependencies: 'Client input' },
+                  { task: `Prepare change control documentation`, timeline: "Week 2", effortHours: 5, product: p.product, dependencies: 'IT policy approval' }
+                ]
+              },
+              {
+                phase: "Deployment",
+                subtasks: [
+                  { task: `Install and configure ${p.product}`, timeline: "Weeks 3-4", effortHours: 12, product: p.product, dependencies: 'None' },
+                  { task: `Test ${p.product} functionality`, timeline: "Week 5", effortHours: 8, product: p.product, dependencies: 'Configuration complete' },
+                  { task: `Roll out ${p.product} to initial users`, timeline: "Week 6", effortHours: 6, product: p.product, dependencies: 'Testing approval' }
+                ]
+              }
             ]),
             bestPractices: products.map(p => ({
               product: p.product,
