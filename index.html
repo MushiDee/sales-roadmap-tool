@@ -342,7 +342,7 @@
         ];
 
         // Additional products
-        let additionalProducts = JSON.parse(localStorage.getItem('additionalProducts')) || [];
+        let additionalProducts = JSON.parse(localStorage.getItem('additionalProducts') || '[]');
 
         // Populate product list and checkboxes
         function populateProducts() {
@@ -467,7 +467,11 @@
             console.log('Form submission started...');
             try {
                 e.preventDefault();
-                const spinner = document.getElementById('loadingSpinner');
+                const spinner = document.getElementById('loadingSpinner'); // Define spinner here
+                if (!spinner) {
+                    console.error('Loading spinner element not found');
+                    return;
+                }
                 spinner.style.display = 'block';
 
                 const formData = new FormData(this);
@@ -567,46 +571,42 @@
                     roadmapContent += '<h3 style="font-size: 12pt;">3.' + (index + 1) + ' Milestone ' + (index + 1) + ': ' + milestone.name + ' (' + milestone.timeframe + ')</h3>';
                     roadmapContent += '<h4 style="font-size: 11pt;">Products Utilized</h4>';
                     roadmapContent += '<p>' + (milestone.productsUsed ? milestone.productsUsed.join(', ') : 'None') + '</p>';
-                    roadmapContent += '<h4 style="font-size: 11pt;">What We’ll Deliver</h4>';
+                    roadmapContent += '<h4 style="font-size: 11pt;">Deliverables</h4>';
                     roadmapContent += '<ul style="padding-left: 20px;">';
                     milestone.deliverables.forEach(d => {
                         roadmapContent += '<li>' + d + '</li>';
                     });
                     roadmapContent += '</ul>';
-                    roadmapContent += '<h4 style="font-size: 11pt;">How We’ll Do It</h4>';
+                    roadmapContent += '<h4 style="font-size: 11pt;">Approach</h4>';
                     roadmapContent += '<p>' + milestone.approach + '</p>';
                     roadmapContent += '<h4 style="font-size: 11pt;">Project Plan</h4>';
                     roadmapContent += '<table style="width: 100%; border-collapse: collapse;">';
                     roadmapContent += '<tr>';
+                    roadmapContent += '<th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Phase</th>';
                     roadmapContent += '<th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Task</th>';
                     roadmapContent += '<th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Timeline</th>';
                     roadmapContent += '<th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Effort (Hours)</th>';
                     roadmapContent += '<th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Product</th>';
                     roadmapContent += '<th style="border: 1px solid #ccc; padding: 8px; background-color: #003087; color: #fff;">Dependencies</th>';
                     roadmapContent += '</tr>';
-                    if (milestone.projectPlan && milestone.projectPlan.length > 0) {
-                        milestone.projectPlan.forEach(p => {
+                    milestone.projectPlan.forEach(plan => {
+                        plan.subtasks.forEach(subtask => {
                             roadmapContent += '<tr>';
-                            roadmapContent += '<td style="border: 1px solid #ccc; padding: 8px;">' + p.task + '</td>';
-                            roadmapContent += '<td style="border: 1px solid #ccc; padding: 8px;">' + p.timeline + '</td>';
-                            roadmapContent += '<td style="border: 1px solid #ccc; padding: 8px;">' + p.effortHours + '</td>';
-                            roadmapContent += '<td style="border: 1px solid #ccc; padding: 8px;">' + p.product + '</td>';
-                            roadmapContent += '<td style="border: 1px solid #ccc; padding: 8px;">' + p.dependencies + '</td>';
+                            roadmapContent += '<td style="border: 1px solid #ccc; padding: 8px;">' + plan.phase + '</td>';
+                            roadmapContent += '<td style="border: 1px solid #ccc; padding: 8px;">' + subtask.task + '</td>';
+                            roadmapContent += '<td style="border: 1px solid #ccc; padding: 8px;">' + subtask.timeline + '</td>';
+                            roadmapContent += '<td style="border: 1px solid #ccc; padding: 8px;">' + subtask.effortHours + '</td>';
+                            roadmapContent += '<td style="border: 1px solid #ccc; padding: 8px;">' + subtask.product + '</td>';
+                            roadmapContent += '<td style="border: 1px solid #ccc; padding: 8px;">' + (subtask.dependencies || 'None') + '</td>';
                             roadmapContent += '</tr>';
                         });
-                    } else {
-                        roadmapContent += '<tr><td colspan="5" style="border: 1px solid #ccc; padding: 8px;">No project plan provided</td></tr>';
-                    }
+                    });
                     roadmapContent += '</table>';
                     roadmapContent += '<h4 style="font-size: 11pt;">Best Practices</h4>';
                     roadmapContent += '<ul style="padding-left: 20px;">';
-                    if (milestone.bestPractices && milestone.bestPractices.length > 0) {
-                        milestone.bestPractices.forEach(b => {
-                            roadmapContent += '<li>' + b.product + ': ' + b.guideline + '</li>';
-                        });
-                    } else {
-                        roadmapContent += '<li>No best practices provided</li>';
-                    }
+                    milestone.bestPractices.forEach(bp => {
+                        roadmapContent += '<li>' + bp.product + ': ' + bp.guideline + '</li>';
+                    });
                     roadmapContent += '</ul>';
                     roadmapContent += '<h4 style="font-size: 11pt;">Potential Risks</h4>';
                     roadmapContent += '<ul style="padding-left: 20px;">';
@@ -644,7 +644,7 @@
                 console.error('Error generating roadmap:', error);
                 alert('Failed to generate roadmap. Please check your Netlify Function setup or contact support.');
             } finally {
-                spinner.style.display = 'none';
+                if (spinner) spinner.style.display = 'none'; // Ensure spinner is hidden even on error
             }
         });
 
