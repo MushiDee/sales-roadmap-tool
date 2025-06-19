@@ -41,7 +41,7 @@ exports.handler = async function(event, context) {
 
     console.log('Constructing detailed prompt');
     const prompt = `
-      You are an expert IT consultant for JEC Technologies (Pty) Ltd, specializing in managed IT services and Microsoft Cloud solutions. Create a 12-month IT roadmap with three milestones tailored to the client's specific needs, infrastructure, and selected products, addressing their unique challenges and goals. For each product in each milestone, break the implementation into 3-4 distinct phases (e.g., Planning, Deployment, Training, Review) with 3-5 specific, actionable subtasks per phase that the project team can follow. Ensure tasks are customized to the client's context (e.g., for 15 users on Managed Remote Helpdesk, include user-specific onboarding steps) and aligned with industry best practices (e.g., ITIL 4 for Managed Remote Helpdesk, NIST for Managed Cybersecurity & SOC service, Microsoft Zero Trust for Managed M365 instance). Each subtask must include:
+      You are an expert IT consultant for JEC Technologies (Pty) Ltd, specializing in managed IT services and Microsoft Cloud solutions. Create a 12-month IT roadmap with three milestones tailored to the client's specific needs, infrastructure, and selected products, addressing their unique challenges and goals. For each product in each milestone, structure the implementation as a 'projectPlan' array containing 2-3 phases (e.g., Planning, Deployment, Training), where each phase includes a 'subtasks' array with 3-5 specific, actionable tasks that the project team can follow. Ensure tasks are customized to the client's context (e.g., for 15 users on Managed Remote Helpdesk, include user-specific onboarding steps) and aligned with industry best practices (e.g., ITIL 4 for Managed Remote Helpdesk, NIST for Managed Cybersecurity & SOC service, Microsoft Zero Trust for Managed M365 instance). Each subtask must include:
       - A detailed action (e.g., "Confirm user list and contact details for 15 users" for Managed Remote Helpdesk, "Implement daily backups for 4TB server" for Managed Servers).
       - An approximate timeline (e.g., Week 1-2, Month 1).
       - Effort hours (e.g., 5-20 hours) based on product complexity and client scale.
@@ -86,16 +86,17 @@ exports.handler = async function(event, context) {
             "phase": "Planning",
             "subtasks": [
               {"task": "Confirm server specifications and backup requirements for 4TB data", "timeline": "Week 1", "effortHours": 8, "product": "Managed Servers", "dependencies": "Hardware excluded"},
-              {"task": "Identify firewall deployment locations", "timeline": "Week 1-2", "effortHours": 6, "product": "Managed Firewalls", "dependencies": "Licensing excluded"},
-              {"task": "Draft change control plan", "timeline": "Week 2", "effortHours": 5, "product": "Managed Servers", "dependencies": "IT policy approval"}
+              {"task": "Identify firewall deployment locations based on LTE connectivity", "timeline": "Week 1-2", "effortHours": 6, "product": "Managed Firewalls", "dependencies": "Site survey"},
+              {"task": "Draft change control plan for server backup", "timeline": "Week 2", "effortHours": 5, "product": "Managed Servers", "dependencies": "IT policy approval"}
             ]
           },
           {
             "phase": "Deployment",
             "subtasks": [
               {"task": "Implement daily backups for 4TB server", "timeline": "Weeks 3-4", "effortHours": 15, "product": "Managed Servers", "dependencies": "None"},
-              {"task": "Configure intrusion detection system", "timeline": "Weeks 3-4", "effortHours": 12, "product": "Managed Firewalls", "dependencies": "None"},
-              {"task": "Test backup and firewall integration", "timeline": "Week 5", "effortHours": 10, "product": "Managed Servers", "dependencies": "Firewall setup"}
+              {"task": "Configure intrusion detection system on firewall", "timeline": "Weeks 3-4", "effortHours": 12, "product": "Managed Firewalls", "dependencies": "Hardware setup"},
+              {"task": "Test backup and firewall integration", "timeline": "Week 5", "effortHours": 10, "product": "Managed Servers", "dependencies": "Firewall configuration"},
+              {"task": "Deploy backup alerts to IT team", "timeline": "Week 6", "effortHours": 5, "product": "Managed Servers", "dependencies": "Testing complete"}
             ]
           }
         ],
@@ -109,7 +110,7 @@ exports.handler = async function(event, context) {
       - milestones: array of milestone objects (name, timeframe, deliverables, approach, risks, kpis, productsUsed, projectPlan with phases and subtasks, bestPractices)
       - nextSteps: string
 
-      Ensure projectPlan includes 3-4 phases per product per milestone, with 3-5 detailed subtasks per phase, aligned with best practices and client needs, and do not include a summaryTable.
+      Ensure projectPlan includes 2-3 phases per product per milestone, with 3-5 detailed subtasks per phase, and all subtasks have task, timeline, effortHours, product, and dependencies fields. Reject any response missing these fields and return an error if the structure is invalid.
     `;
 
     console.log('Calling xAI Grok API');
@@ -125,10 +126,10 @@ exports.handler = async function(event, context) {
         body: JSON.stringify({
           model: 'grok-3',
           messages: [{ role: 'user', content: prompt }],
-          max_tokens: 1000,
+          max_tokens: 1500, // Increased to accommodate detailed responses
           temperature: 0.7
         }),
-        timeout: 7000 // 7-second timeout
+        timeout: 10000 // Increased to 10 seconds to reduce timeouts
       });
     } catch (err) {
       console.error('API fetch error:', err.message, { duration: Date.now() - startTime });
@@ -190,7 +191,8 @@ exports.handler = async function(event, context) {
                 phase: "Expansion",
                 subtasks: [
                   { task: `Plan expansion for ${p.product}`, timeline: "Week 6", effortHours: 6, product: p.product, dependencies: 'Client approval' },
-                  { task: `Deploy additional ${p.product} units`, timeline: "Weeks 7-8", effortHours: 10, product: p.product, dependencies: 'None' }
+                  { task: `Deploy additional ${p.product} units`, timeline: "Weeks 7-8", effortHours: 10, product: p.product, dependencies: 'None' },
+                  { task: `Train staff on expanded ${p.product}`, timeline: "Week 9", effortHours: 5, product: p.product, dependencies: 'Deployment complete' }
                 ]
               }
             ]),
@@ -223,7 +225,8 @@ exports.handler = async function(event, context) {
                 phase: "Migration",
                 subtasks: [
                   { task: `Plan 4TB data migration to ${p.product}`, timeline: "Week 6", effortHours: 10, product: p.product, dependencies: 'Client approval' },
-                  { task: `Execute data migration`, timeline: "Weeks 7-10", effortHours: 20, product: p.product, dependencies: 'Integration complete' }
+                  { task: `Execute data migration`, timeline: "Weeks 7-10", effortHours: 20, product: p.product, dependencies: 'Integration complete' },
+                  { task: `Verify migrated data integrity`, timeline: "Week 11", effortHours: 8, product: p.product, dependencies: 'Migration complete' }
                 ]
               }
             ]),
@@ -257,7 +260,7 @@ exports.handler = async function(event, context) {
     }
 
     const apiResponseData = await apiResponse.json();
-    console.log('Raw Grok API response length:', JSON.stringify(apiResponseData).length);
+    console.log('Raw Grok API response:', JSON.stringify(apiResponseData, null, 2)); // Log raw response for debugging
 
     let roadmap;
     try {
@@ -267,11 +270,22 @@ exports.handler = async function(event, context) {
       }
       roadmap = JSON.parse(apiResponseData.choices[0].message.content);
       console.log('Parsed roadmap objects:', roadmap.milestones?.length || 0);
-      if (!roadmap.milestones.every(m => m.projectPlan && Array.isArray(m.projectPlan) && m.projectPlan.every(p => p.subtasks && Array.isArray(p.subtasks) && p.subtasks.length >= 3))) {
-        console.error('Missing or insufficient projectPlan with subtasks');
-        throw new Error('Missing or incomplete projectPlan with subtasks in API response');
+
+      // Stricter validation for projectPlan
+      if (!roadmap.milestones || !Array.isArray(roadmap.milestones) || !roadmap.nextSteps) {
+        throw new Error('Invalid roadmap structure');
       }
-      console.log('Project plans with subtasks included:', roadmap.milestones.every(m => m.projectPlan?.every(p => p.subtasks?.length > 0)));
+      roadmap.milestones.forEach(milestone => {
+        if (!milestone.projectPlan || !Array.isArray(milestone.projectPlan)) {
+          throw new Error('Missing or invalid projectPlan');
+        }
+        milestone.projectPlan.forEach(plan => {
+          if (!plan.phase || !Array.isArray(plan.subtasks) || plan.subtasks.length < 3 || !plan.subtasks.every(s => s.task && s.timeline && s.effortHours && s.product && s.dependencies)) {
+            throw new Error('Invalid or incomplete subtasks in projectPlan');
+          }
+        });
+      });
+      console.log('Project plans with valid subtasks included:', roadmap.milestones.every(m => m.projectPlan.every(p => p.subtasks.every(s => s.task && s.timeline && s.effortHours && s.product && s.dependencies))));
     } catch (e) {
       console.error('Invalid JSON or incomplete response:', apiResponseData.choices?.[0]?.message?.content || '', e.message);
       roadmap = {
