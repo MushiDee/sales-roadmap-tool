@@ -554,7 +554,7 @@
                 roadmapContent += '<h3 style="font-size: 12pt;">Recommended Products</h3>';
                 roadmapContent += '<ul style="padding-left: 20px;">';
                 data.products.forEach(p => {
-                    roadmapContent += '<li>' + p.product + ' (' + p.quantity + ' units)</li>';
+                    roadmapContent += '<li>' + p.product + ' (' + (p.quantity || '0') + ' units)</li>';
                 });
                 roadmapContent += '</ul>';
                 roadmapContent += '</div>';
@@ -719,11 +719,11 @@
             `;
             const content = header + (sourceElement ? sourceElement.innerHTML : '');
             const escapedContent = content
-                .replace(/&/g, '&')
-                .replace(/</g, '<')
-                .replace(/>/g, '>')
-                .replace(/"/g, '"')
-                .replace(/'/g, '&#39;');
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
             const docContent = `
                 <!DOCTYPE html>
                 <html>
